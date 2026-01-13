@@ -189,76 +189,101 @@ export const generateStoryboard = async (
 ): Promise<StoryboardResponse> => {
   const ai = getAiClient();
 
-  const prompt = `당신은 영화 감독급 웹툰 연출가다.
+  const prompt = `당신은 봉준호, 박찬욱급 시네마토그래퍼다.
 
 [입력]
 소재: ${synopsis}
 장르: ${genre}
 
-[핵심 원칙 - 반드시 지켜라]
-8컷 = 한 순간의 하이라이트 (0.5초~3초).
-소재에서 가장 임팩트 있는 **단일 순간**을 선택해 8컷으로 분해하라.
+[핵심 원칙]
+8컷 = 0.5초~3초의 **결정적 순간**을 시네마틱하게 분해.
+정적인 AI 그림이 아닌, 영화 스틸컷 같은 역동적 연출.
 
 [절대 금지]
-- 시간 경과 (기승전결, 스토리 진행)
-- 장면 전환
-- 새로운 캐릭터 등장
-- 배경 변경
+- 시간 경과, 장면 전환, 새 캐릭터 등장
+- 정면 바스트샷의 반복 (가장 지루한 구도)
+- 평범한 아이레벨 정중앙 배치
+- "설명하는" 구도 (인물 전체가 다 보이는 안전한 구도)
 
-[필수]
-- 8컷 모두 같은 0.5초~3초 안의 순간
-- 같은 장소, 같은 조명, 같은 캐릭터
-- 앵글과 스케일만 변화
-- 마이크로 디테일 필수
+[시네마틱 연출 원칙 - 반드시 적용]
 
-[연출 원칙]
-- 리듬 변화: 빠른/느린 전환의 대비
-- 스케일 변화: 와이드↔클로즈업 전환으로 긴장감 조절
-- 시선 유도: 독자의 눈이 자연스럽게 흐르도록
-- 연속 3컷 동일 앵글/샷 크기 금지
+1. **극단적 앵글 사용**
+   - 로우앵글로 위압감/영웅적 순간 강조
+   - 하이앵글로 취약함/고립감 표현
+   - 더치앵글로 불안/긴장 고조
+   - 버즈아이(조감)로 상황 전체 조망
+   - 웜즈아이(개미시점)로 극적 임팩트
 
-[시각적 디테일 - 반드시 포함]
-- 마이크로: 땀방울, 떨리는 손끝, 확대되는 눈동자, 입술의 떨림
-- 환경: 흩날리는 머리카락, 옷자락, 먼지, 파편
-- 빛과 그림자: 역광, 실루엣, 하이라이트, 렌즈 플레어
-- 속도감: 모션 블러, 집중선, 임팩트 이펙트
+2. **과감한 구도**
+   - 프레임 가장자리 배치 (dead center 금지)
+   - 대각선 구도로 역동성 부여
+   - 여백 활용으로 긴장감 (캐릭터를 작게, 공간을 크게)
+   - 전경(foreground) 요소로 깊이감 (흐릿한 손, 물체 등)
+   - 실루엣/역광으로 분위기 강조
 
-[옵션]
-샷: extreme_wide / wide / full / medium / medium_close / close_up / extreme_close_up
+3. **카메라 움직임 느낌**
+   - 줌인 효과: 갑자기 가까워지는 임팩트
+   - 달리샷 느낌: 피사체를 따라가는 역동성
+   - 페이스 투 페이스: 두 인물의 극적 대치
+   - 리액션 컷: 보는 자 → 보이는 것 교차
+
+4. **빛과 그림자의 영화적 활용**
+   - 림라이트(윤곽광)으로 인물 분리
+   - 하드 라이트로 극적 명암
+   - 렌즈 플레어로 감정적 순간 강조
+   - 실루엣으로 미스터리/드라마틱 연출
+
+5. **마이크로 디테일 (필수)**
+   - 떨리는 손끝, 쥐어지는 주먹
+   - 흘러내리는 땀방울/눈물
+   - 확대되는 눈동자(동공 수축/확장)
+   - 바람에 날리는 머리카락/옷자락
+   - 공기 중 먼지/파편/불꽃
+
+[샷 구성 규칙]
+- 컷1: 와이드 또는 익스트림 앵글로 임팩트 있는 시작
+- 컷2-3: 리듬 변화 (빠름↔느림)
+- 컷4-5: 스케일 전환 (와이드↔클로즈업)
+- 컷6-7: 긴장 고조, 극단적 앵글
+- 컷8: 임팩트 또는 여운 (익스트림 클로즈업 or 풀백)
+- **연속 2컷 동일 앵글/샷 크기 금지**
+
+[샷 옵션]
+샷: extreme_wide / wide / full / medium / medium_close / close_up / extreme_close_up / detail
 앵글: eye_level / low_angle / high_angle / dutch_angle / over_shoulder / pov / birds_eye / worms_eye
 
-[JSON 출력 - 모든 필드 필수]
+[JSON 출력]
 {
   "title": "제목",
-  "characterVisuals": "캐릭터 외형 요약 (영어, 1줄)",
-  "highlightMoment": "선택한 하이라이트 순간 (한국어, 1줄)",
+  "characterVisuals": "캐릭터 외형 (영어)",
+  "highlightMoment": "이 순간의 본질 (한국어)",
   "mainCharacter": {
-    "name": "캐릭터 이름",
-    "appearance": "얼굴형, 눈 색상, 머리카락 색/길이/스타일, 피부톤, 나이대 (영어, 상세히)",
-    "clothing": "현재 씬의 의상 상세 (영어, 색상/재질/스타일)",
-    "distinctiveFeatures": "흉터, 악세서리, 문신, 특징적 표정 등 (영어)"
+    "name": "이름",
+    "appearance": "얼굴형, 눈색, 머리카락, 피부톤, 나이대 (영어, 상세히)",
+    "clothing": "의상 상세 (영어)",
+    "distinctiveFeatures": "특징 (영어)"
   },
   "location": {
     "name": "장소명",
-    "description": "바닥, 벽, 천장, 가구, 소품 등 공간 상세 (영어)",
-    "lighting": "조명 상태 (역광, 자연광, 네온, 그림자 방향 등)",
-    "atmosphere": "분위기 (긴장감, 평화로움, 공포 등)",
-    "timeOfDay": "시간대 (낮, 밤, 새벽, 석양 등)"
+    "description": "공간 상세 (영어)",
+    "lighting": "조명 (역광, 림라이트 등)",
+    "atmosphere": "분위기",
+    "timeOfDay": "시간대"
   },
   "panels": [
     {
       "panelNumber": 1,
       "timeOffset": "0.0s",
-      "description": "영어 시각 묘사 (디테일 필수)",
-      "descriptionKo": "한국어 연출 노트",
-      "shotSize": "샷 크기",
+      "description": "시네마틱한 영어 시각 묘사 (앵글, 조명, 구도 명시)",
+      "descriptionKo": "연출 노트",
+      "shotSize": "샷",
       "cameraAngle": "앵글",
       "visualDetails": ["디테일1", "디테일2", "디테일3"],
-      "dialogue": "대사 (있으면)",
+      "dialogue": "대사",
       "caption": "",
       "characterFocus": "피사체",
-      "composition": "구도 설명",
-      "directorNote": "이 컷의 연출 의도"
+      "composition": "구도 (삼분법, 대각선, 프레임인프레임 등)",
+      "directorNote": "연출 의도 (왜 이 앵글인지)"
     }
   ]
 }
@@ -376,39 +401,71 @@ Style: Standard round speech bubble with tail pointing to speaker
 Position: Upper area of panel, avoid covering face`;
   }
 
-  // Build prompt
-  let prompt = `[MASTERPIECE WEBTOON PANEL - PANEL ${panelIndex + 1}]
+  // Build prompt - 시네마틱 연출 강화
+  let prompt = `[CINEMATIC WEBTOON PANEL - PANEL ${panelIndex + 1}]
 
-TARGET: Professional Korean webtoon publication quality
-FORMAT: 9:16 vertical (mobile optimized)
+GOAL: 영화 스틸컷 퀄리티의 웹툰 패널. 정적인 AI 그림이 아닌 역동적 연출.
+FORMAT: 9:16 vertical (mobile webtoon)
 
-[STYLE]
+[ART STYLE]
 ${stylePrompt}
 
-[GENRE: ${genre}]
+[GENRE MOOD: ${genre}]
 ${genreDesc}
 
-[CHARACTER - MUST MATCH REFERENCE EXACTLY]
+[CHARACTER - EXACT MATCH REQUIRED]
 ${characterDesc}
 ${locationDesc}
 
-[SCENE]
+[SCENE DIRECTION]
 ${panel.description}
-${panel.visualDetails ? `Details: ${panel.visualDetails.join(', ')}` : ''}
+${panel.visualDetails ? `Visual Details: ${panel.visualDetails.join(', ')}` : ''}
 
-Camera: ${panel.cameraAngle || 'medium shot'}
+[CAMERA WORK - CRITICAL]
+Camera Angle: ${panel.cameraAngle || 'dynamic angle'}
 Shot Size: ${panel.shotSize || 'medium'}
-Focus: ${panel.characterFocus || 'main character'}
-Composition: ${panel.composition || 'rule of thirds'}
+Subject: ${panel.characterFocus || 'main character'}
+Composition: ${panel.composition || 'cinematic composition'}
 ${dialogueSection}
 
-[RULES]
-- Cinematic lighting, high-end illustration
-- Maintain EXACT character appearance from reference
-- Maintain EXACT location/environment consistency
+[CINEMATIC REQUIREMENTS - MUST APPLY]
+1. DRAMATIC LIGHTING:
+   - Strong rim light separating subject from background
+   - Atmospheric lighting (volumetric rays, dust particles in light)
+   - High contrast shadows for mood
+   - Lens flare or light bloom for emotional moments
+
+2. DYNAMIC COMPOSITION:
+   - Subject NOT dead center (use rule of thirds or golden ratio)
+   - Diagonal lines for energy and tension
+   - Foreground elements for depth (blurred objects, hands, debris)
+   - Negative space to emphasize emotion
+
+3. CINEMATIC CAMERA:
+   - ${panel.cameraAngle === 'low_angle' ? 'Camera looking UP at subject - heroic/powerful feel' : ''}
+   - ${panel.cameraAngle === 'high_angle' ? 'Camera looking DOWN at subject - vulnerable/isolated feel' : ''}
+   - ${panel.cameraAngle === 'dutch_angle' ? 'TILTED frame (15-30 degrees) - tension/unease' : ''}
+   - ${panel.cameraAngle === 'worms_eye' ? 'Extreme low angle from ground - dramatic impact' : ''}
+   - ${panel.cameraAngle === 'birds_eye' ? 'Directly overhead view - omniscient perspective' : ''}
+
+4. MICRO DETAILS (REQUIRED):
+   - Sweat droplets, trembling fingers, dilated pupils
+   - Hair/clothing movement from wind or motion
+   - Dust particles, debris, sparks in air
+   - Motion blur on fast elements
+
+5. ATMOSPHERE:
+   - NOT flat lighting - create depth with light/shadow
+   - Environmental storytelling (weather, time of day)
+   - Emotional color grading matching the mood
+
+[HARD RULES]
+- EXACT character appearance from reference sheet
+- EXACT environment from location reference
 - Vertical 9:16 composition
-- Professional webtoon quality
-${panel.dialogue ? '- Render speech bubble with Korean text clearly' : '- DO NOT render any text or speech bubbles'}`;
+- Publication-ready quality
+- NO generic AI look - cinematic feel only
+${panel.dialogue ? '- Render speech bubble with Korean text clearly visible' : '- DO NOT render any text or speech bubbles'}`;
 
   // Build contents array
   const contents: Array<{ text: string } | { inlineData: { mimeType: string; data: string } }> = [

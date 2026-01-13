@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { AppStep } from '../../../types';
 import { useProjectStore, canGoToStep } from '../../store/projectStore';
+import { ApiKeyModal, clearStoredApiKey } from '../ApiKeyModal';
 
 const NAV_ITEMS = [
   { step: AppStep.CONCEPT, label: 'Planning', icon: '01' },
@@ -10,6 +11,7 @@ const NAV_ITEMS = [
 
 export const Navigation: React.FC = () => {
   const { step, project, setStep, setProject, setIdeaInput, setError } = useProjectStore();
+  const [showApiKeyModal, setShowApiKeyModal] = useState(false);
 
   const navigateToStep = (targetStep: AppStep) => {
     if (canGoToStep(targetStep, project)) {
@@ -95,6 +97,17 @@ export const Navigation: React.FC = () => {
         {/* Project Actions */}
         <div className="flex items-center gap-3">
           <button
+            onClick={() => setShowApiKeyModal(true)}
+            className="h-10 px-4 text-xs font-bold tracking-wider uppercase border-2 border-ink-200 text-ink-500 hover:border-ink-900 hover:text-ink-900 hover:bg-warm-100 transition-all flex items-center gap-2"
+            aria-label="API 키 설정"
+            title="API 키 변경"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+            </svg>
+            API Key
+          </button>
+          <button
             onClick={handleImport}
             className="h-10 px-5 text-xs font-bold tracking-wider uppercase border-2 border-ink-300 text-ink-600 hover:border-ink-900 hover:text-ink-900 hover:bg-warm-100 transition-all"
             aria-label="프로젝트 불러오기"
@@ -160,6 +173,15 @@ export const Navigation: React.FC = () => {
           })}
         </div>
       </div>
+
+      {/* API Key Modal */}
+      {showApiKeyModal && (
+        <ApiKeyModal
+          onApiKeySet={() => setShowApiKeyModal(false)}
+          onClose={() => setShowApiKeyModal(false)}
+          isChanging={true}
+        />
+      )}
     </nav>
   );
 };

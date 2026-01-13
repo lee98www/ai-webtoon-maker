@@ -6,6 +6,7 @@ import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
 import { buildStylePrompt, ADVANCED_STYLE_PROMPTS, ArtStyle as StyleEnum } from './prompts/stylePrompts';
 import { buildGenrePrompt, GENRE_DIRECTING, Genre as GenreEnum } from './prompts/genreDirecting';
+import { buildStoryboardSystemPrompt, EIGHT_PANEL_STRUCTURE, GENRE_TEMPO, DIALOGUE_RULES } from './prompts/storyboardPrompts';
 
 // ============================================
 // Types
@@ -63,8 +64,14 @@ const STYLE_PROMPTS: Record<ArtStyle, string> = {
 // Zod Schemas for Validation
 // ============================================
 
+const BeatTypeSchema = z.enum([
+  'hook', 'setup', 'development', 'escalation', 'pre_climax', 'climax', 'cliffhanger'
+]);
+
 const PanelSchema = z.object({
   panelNumber: z.number().int().min(1),
+  beatType: BeatTypeSchema,
+  emotionalWeight: z.number().min(0).max(1),
   description: z.string().min(10),
   descriptionKo: z.string().min(5),
   dialogue: z.string(),
@@ -117,6 +124,93 @@ function extractBase64(dataUrl: string): string {
     return dataUrl.split(',')[1];
   }
   return dataUrl;
+}
+
+// Beat-specific directing for 8-panel structure
+type BeatType = 'hook' | 'setup' | 'development' | 'escalation' | 'pre_climax' | 'climax' | 'cliffhanger';
+
+function getBeatDirecting(beatType: BeatType | string, emotionalWeight: number, genre: GenreEnum): string {
+  const intensityLabel = emotionalWeight >= 0.8 ? 'MAXIMUM INTENSITY' :
+                         emotionalWeight >= 0.6 ? 'HIGH INTENSITY' :
+                         emotionalWeight >= 0.4 ? 'MODERATE INTENSITY' : 'LOW INTENSITY';
+
+  const beatInstructions: Record<string, string> = {
+    'hook': `[STORY BEAT: HOOK - GRAB ATTENTION]
+Emotional Intensity: ${intensityLabel} (${(emotionalWeight * 100).toFixed(0)}%)
+This is the OPENING panel. It MUST captivate the reader instantly.
+REQUIREMENTS:
+- Create visual intrigue or mystery
+- Use dramatic composition that demands attention
+- Consider: silhouette with mystery, dramatic lighting, intriguing close-up
+- The reader should think "What's happening here? I need to know more."`,
+
+    'setup': `[STORY BEAT: SETUP - ESTABLISH WORLD]
+Emotional Intensity: ${intensityLabel} (${(emotionalWeight * 100).toFixed(0)}%)
+This panel establishes the scene and introduces character context.
+REQUIREMENTS:
+- Clear character introduction in their environment
+- Show the "normal world" before conflict
+- Use medium or wide shots to establish space
+- Reader should understand WHO and WHERE`,
+
+    'development': `[STORY BEAT: DEVELOPMENT - BUILD STORY]
+Emotional Intensity: ${intensityLabel} (${(emotionalWeight * 100).toFixed(0)}%)
+This panel advances the plot and introduces conflict elements.
+REQUIREMENTS:
+- Show progression from the previous panel
+- Introduce hints of conflict or complication
+- Use varied shot composition to maintain interest
+- Foreshadow coming tension`,
+
+    'escalation': `[STORY BEAT: ESCALATION - RAISE STAKES]
+Emotional Intensity: ${intensityLabel} (${(emotionalWeight * 100).toFixed(0)}%)
+Tension is rising rapidly. Things are becoming unavoidable.
+REQUIREMENTS:
+- Use dutch angles or dynamic camera for unease
+- Close-ups on expressions showing stress/determination
+- Faster visual rhythm, tighter framing
+- The reader's heart rate should increase`,
+
+    'pre_climax': `[STORY BEAT: PRE-CLIMAX - HOLD YOUR BREATH]
+Emotional Intensity: ${intensityLabel} (${(emotionalWeight * 100).toFixed(0)}%)
+The moment before explosion. Time feels frozen.
+REQUIREMENTS:
+- Extreme close-up or freeze-frame effect
+- Maximum tension in composition
+- Minimal or no dialogue - visual silence
+- Everything converges to the next panel`,
+
+    'climax': `[STORY BEAT: CLIMAX - MAXIMUM IMPACT]
+Emotional Intensity: MAXIMUM (100%)
+This is THE moment. The emotional/action peak.
+REQUIREMENTS:
+- Most impactful composition of the sequence
+- Full visual power - dramatic lighting, perfect framing
+- Iconic pose or emotional expression
+- This panel should be REMEMBERED
+- Use the largest visual weight in the scene`,
+
+    'cliffhanger': `[STORY BEAT: CLIFFHANGER - LEAVE THEM WANTING]
+Emotional Intensity: ${intensityLabel} (${(emotionalWeight * 100).toFixed(0)}%)
+The page-turn hook. Reader MUST want to see what comes next.
+REQUIREMENTS:
+- Introduce new question or mystery
+- Reveal something unexpected OR cut at peak tension
+- The reader should think "Wait, what?!"
+- Never resolve completely - leave threads open`
+  };
+
+  const instruction = beatInstructions[beatType] || beatInstructions['development'];
+
+  // Add genre-specific tempo guidance
+  const tempo = GENRE_TEMPO[genre];
+  const tempoGuidance = tempo ? `
+
+[GENRE TEMPO: ${genre}]
+Rhythm: ${tempo.overallRhythm}
+${beatType === 'climax' ? `Climax Style: ${tempo.climaxStyle}` : ''}` : '';
+
+  return instruction + tempoGuidance;
 }
 
 // ============================================
@@ -246,25 +340,42 @@ app.post('/api/generate-storyboard', async (req: Request, res: Response, next: N
     }
 
     const ai = getAiClient();
-    const systemInstruction = `당신은 웹툰 연출 전문가입니다.
 
-[필수 규칙]
-1. **Character Visuals**: 주인공의 외모를 "Character Reference Bible" 수준으로 정밀하게 정의하십시오.
-   - 얼굴: 눈 모양, 눈 색깔, 코, 입술, 얼굴형
-   - 머리: 스타일, 길이, 색상
-   - 체형: 키(상대적), 체격
-   - 의상: 현재 착용 중인 옷의 색상과 패턴
-   - 특징: 흉터, 액세서리 등
+    // 새 프로페셔널 스토리보드 프롬프트 시스템 사용
+    const genreKey = genre as GenreEnum;
+    const systemInstruction = buildStoryboardSystemPrompt(genreKey);
 
-2. **Panels**: 컷마다 영화적인 카메라 워크를 사용하십시오.
-   - extreme close-up, close-up, medium shot, full shot, wide shot
-   - low angle, high angle, dutch angle, bird's eye, worm's eye
+    // 8컷 구조에 맞는 상세 프롬프트
+    const panelStructureGuide = EIGHT_PANEL_STRUCTURE.map(beat =>
+      `${beat.position}컷 (${beat.beatType}): ${beat.description.split(' - ')[1] || beat.description}`
+    ).join('\n');
 
-3. **Dialogue**: 웹툰 특유의 짧고 임팩트 있는 대사를 한국어로 작성하십시오.
+    const tempo = GENRE_TEMPO[genreKey];
+    const tempoGuide = tempo ? `
+[${genre} 템포]
+- 빌드업: ${tempo.buildupPace}
+- 클라이막스: ${tempo.climaxStyle}
+- 리듬: ${tempo.overallRhythm}` : '';
 
-4. **Visual Consistency**: 모든 컷의 description에 캐릭터 외형 키워드를 반복 포함하십시오.`;
+    const prompt = `시놉시스: ${synopsis}
 
-    const prompt = `시놉시스: ${synopsis}\n장르: ${genre}\n총 ${count}컷의 상업적 웹툰 콘티를 JSON으로 생성해.`;
+장르: ${genre}
+총 ${count}컷의 프로페셔널 웹툰 콘티를 생성하세요.
+
+[8컷 구조 가이드라인 - 반드시 따를 것]
+${panelStructureGuide}
+${tempoGuide}
+
+[핵심 요구사항]
+1. 1컷(훅): 독자를 단번에 사로잡는 강렬한 오프닝
+2. 5-6컷(고조): 긴장감이 최고조에 달하는 연출
+3. 7컷(클라이막스): 감정의 폭발, 가장 임팩트 있는 장면
+4. 8컷(클리프행어): 다음 회차가 궁금하도록 만드는 마무리
+
+각 패널의 description은 영어로, 캐릭터 외형 키워드를 반복 포함하여 일관성 유지.
+각 패널의 dialogue는 한국어로, 최대 ${DIALOGUE_RULES.maxLength.speech}자 이내의 임팩트 있는 대사.
+
+JSON 형식으로 응답하세요.`;
 
     const response = await withTimeout(
       ai.models.generateContent({
@@ -277,21 +388,32 @@ app.post('/api/generate-storyboard', async (req: Request, res: Response, next: N
             type: Type.OBJECT,
             properties: {
               title: { type: Type.STRING },
-              characterVisuals: { type: Type.STRING, description: 'Master reference for the main character (English, detailed)' },
+              characterVisuals: { type: Type.STRING, description: 'Master reference for the main character (English, detailed) - include face shape, eye details, hair style/color/length, body type, current outfit with colors, and identifying features' },
               panels: {
                 type: Type.ARRAY,
                 items: {
                   type: Type.OBJECT,
                   properties: {
                     panelNumber: { type: Type.INTEGER },
-                    description: { type: Type.STRING, description: 'Detailed visual prompt for AI image generation (English)' },
-                    descriptionKo: { type: Type.STRING, description: '사용자용 연출 가이드 (한국어)' },
-                    dialogue: { type: Type.STRING },
-                    caption: { type: Type.STRING },
-                    characterFocus: { type: Type.STRING },
-                    cameraAngle: { type: Type.STRING }
+                    beatType: {
+                      type: Type.STRING,
+                      description: 'Story beat type: hook, setup, development, escalation, pre_climax, climax, or cliffhanger'
+                    },
+                    emotionalWeight: {
+                      type: Type.NUMBER,
+                      description: 'Emotional intensity from 0.0 to 1.0 (climax should be 1.0)'
+                    },
+                    description: {
+                      type: Type.STRING,
+                      description: 'Detailed visual prompt for AI image generation (English). MUST include character appearance keywords for consistency. Include camera angle, lighting, and emotional atmosphere.'
+                    },
+                    descriptionKo: { type: Type.STRING, description: '사용자용 연출 가이드 (한국어) - 감정, 분위기, 카메라 앵글 설명' },
+                    dialogue: { type: Type.STRING, description: '캐릭터 대사 (한국어, 40자 이내). 빈 문자열 가능.' },
+                    caption: { type: Type.STRING, description: '나레이션/상황설명 (한국어, 80자 이내). 빈 문자열 가능.' },
+                    characterFocus: { type: Type.STRING, description: 'Which character is the focus of this panel' },
+                    cameraAngle: { type: Type.STRING, description: 'Camera angle: extreme close-up, close-up, medium shot, full shot, wide shot + low/high/dutch angle etc.' }
                   },
-                  required: ['panelNumber', 'description', 'descriptionKo', 'dialogue', 'caption', 'characterFocus', 'cameraAngle']
+                  required: ['panelNumber', 'beatType', 'emotionalWeight', 'description', 'descriptionKo', 'dialogue', 'caption', 'characterFocus', 'cameraAngle']
                 }
               }
             },
@@ -367,6 +489,11 @@ app.post('/api/generate-panel', async (req: Request, res: Response, next: NextFu
     const stylePrompt = buildStylePrompt(style as StyleEnum);
     const genrePrompt = buildGenrePrompt(genre as GenreEnum);
 
+    // Beat-specific directing based on 8-panel structure
+    const beatType = panel.beatType || 'development';
+    const emotionalWeight = panel.emotionalWeight || 0.5;
+    const beatDirecting = getBeatDirecting(beatType, emotionalWeight, genre as GenreEnum);
+
     parts.push({
       text: `[MASTERPIECE WEBTOON PANEL - PANEL ${panelIndex + 1}]
 
@@ -376,7 +503,9 @@ RESOLUTION: 2K minimum
 
 ${stylePrompt}
 
-${genrePrompt}`
+${genrePrompt}
+
+${beatDirecting}`
     });
 
     // 2. Style reference image (if provided)

@@ -43,15 +43,27 @@ export interface StyleReference {
   extractedStyle?: string; // AI analyzed style description
 }
 
+// 8-Panel Story Beat Types
+export type BeatType =
+  | 'hook'           // 1컷: 시선을 사로잡는 오프닝
+  | 'setup'          // 2컷: 상황 설정
+  | 'development'    // 3-4컷: 전개
+  | 'escalation'     // 5컷: 긴장감 고조
+  | 'pre_climax'     // 6컷: 절정 직전
+  | 'climax'         // 7컷: 감정/액션의 정점
+  | 'cliffhanger';   // 8컷: 다음회 예고 (페이지 턴 훅)
+
 export interface PanelConfig {
   id: string;
   panelNumber: number;
-  description: string;   // Visual description for AI (English)
-  descriptionKo: string; // Visual description for User (Korean)
-  dialogue: string;      // Text for speech bubble (Korean)
-  caption: string;       // Narration text (Korean)
-  characterFocus: string; // Who is in the shot (English)
-  cameraAngle: string;   // Close-up, wide, etc. (English)
+  beatType?: BeatType;      // 8컷 구조에서의 스토리 비트
+  emotionalWeight?: number; // 감정 강도 (0.0-1.0)
+  description: string;      // Visual description for AI (English)
+  descriptionKo: string;    // Visual description for User (Korean)
+  dialogue: string;         // Text for speech bubble (Korean)
+  caption: string;          // Narration text (Korean)
+  characterFocus: string;   // Who is in the shot (English)
+  cameraAngle: string;      // Close-up, wide, etc. (English)
   generatedImageUrl?: string;
   isGenerating?: boolean;
 }

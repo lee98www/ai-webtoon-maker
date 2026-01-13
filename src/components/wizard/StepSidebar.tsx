@@ -15,29 +15,29 @@ export const StepSidebar: React.FC = () => {
   return (
     <div className="h-full flex flex-col text-white">
       {/* Logo */}
-      <div className="p-6 border-b border-ink-700">
+      <div className="p-4 border-b border-slate-700/50">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-toon-600 flex items-center justify-center font-black text-sm shadow-toon-sm">
+          <div className="w-9 h-9 bg-accent-500 rounded-lg flex items-center justify-center font-semibold text-sm">
             TC
           </div>
           <div>
-            <div className="font-black tracking-tight text-lg">TOONCRAFT</div>
-            <div className="text-[10px] text-toon-400 tracking-widest">AI STUDIO</div>
+            <div className="font-semibold tracking-tight text-base">ToonCraft</div>
+            <div className="text-[10px] text-slate-400">AI Studio</div>
           </div>
         </div>
       </div>
 
       {/* Steps */}
-      <div className="flex-1 overflow-y-auto py-4">
+      <div className="flex-1 overflow-y-auto py-3">
         {phases.map((phase) => {
           const phaseSteps = WIZARD_STEPS.filter(s => s.phase === phase);
 
           return (
-            <div key={phase} className="mb-6">
+            <div key={phase} className="mb-5">
               {/* Phase Header */}
-              <div className="px-6 py-2 flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-toon-500" />
-                <span className="text-xs font-bold text-ink-400 uppercase tracking-wider">
+              <div className="px-4 py-2 flex items-center gap-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-accent-400" />
+                <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">
                   {PHASE_LABELS[phase].labelKo}
                 </span>
               </div>
@@ -55,22 +55,22 @@ export const StepSidebar: React.FC = () => {
                     onClick={() => canNavigate && setCurrentStep(step.id)}
                     disabled={!canNavigate}
                     className={`
-                      w-full px-6 py-3 flex items-center gap-3 text-left transition-all duration-200
+                      w-full px-4 py-2.5 flex items-center gap-3 text-left transition-all duration-150
                       ${isActive
-                        ? 'bg-ink-800 border-l-4 border-toon-500'
-                        : 'border-l-4 border-transparent hover:bg-ink-800/50'
+                        ? 'bg-slate-800 border-l-2 border-accent-400'
+                        : 'border-l-2 border-transparent hover:bg-slate-800/50'
                       }
                       ${!canNavigate && 'opacity-40 cursor-not-allowed'}
                     `}
                   >
                     {/* Step Number/Check */}
                     <div className={`
-                      w-7 h-7 flex items-center justify-center text-xs font-mono font-bold transition-all
+                      w-6 h-6 rounded flex items-center justify-center text-xs font-mono font-medium transition-all
                       ${isComplete
-                        ? 'bg-toon-500 text-white'
+                        ? 'bg-accent-500 text-white'
                         : isActive
-                          ? 'bg-white text-ink-900'
-                          : 'bg-ink-700 text-ink-400'
+                          ? 'bg-white text-slate-900'
+                          : 'bg-slate-700 text-slate-400'
                       }
                     `}>
                       {isComplete ? '✓' : step.icon}
@@ -78,11 +78,11 @@ export const StepSidebar: React.FC = () => {
 
                     {/* Step Label */}
                     <div className="flex-1 min-w-0">
-                      <div className={`text-sm font-medium truncate ${isActive ? 'text-white' : 'text-ink-300'}`}>
+                      <div className={`text-sm font-medium truncate ${isActive ? 'text-white' : 'text-slate-400'}`}>
                         {step.labelKo}
                       </div>
                       {!step.required && (
-                        <div className="text-[10px] text-ink-500">
+                        <div className="text-[10px] text-slate-600">
                           {isSkipped ? '건너뜀' : '선택사항'}
                         </div>
                       )}
@@ -90,7 +90,7 @@ export const StepSidebar: React.FC = () => {
 
                     {/* Active indicator */}
                     {isActive && (
-                      <div className="w-1.5 h-1.5 rounded-full bg-toon-400 animate-pulse" />
+                      <div className="w-1.5 h-1.5 rounded-full bg-accent-400 animate-pulse" />
                     )}
                   </button>
                 );
@@ -101,14 +101,14 @@ export const StepSidebar: React.FC = () => {
       </div>
 
       {/* Progress Footer */}
-      <div className="p-6 border-t border-ink-700">
-        <div className="flex justify-between text-xs text-ink-400 mb-2">
+      <div className="p-4 border-t border-slate-700/50">
+        <div className="flex justify-between text-xs text-slate-500 mb-2">
           <span>진행률</span>
-          <span>{completedRequiredCount}/{totalRequired}</span>
+          <span className="font-medium">{completedRequiredCount}/{totalRequired}</span>
         </div>
-        <div className="h-2 bg-ink-700 overflow-hidden">
+        <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
           <div
-            className="h-full bg-gradient-to-r from-toon-600 to-toon-400 transition-all duration-500"
+            className="h-full bg-gradient-to-r from-accent-500 to-accent-400 rounded-full transition-all duration-300"
             style={{ width: `${progressPercent}%` }}
           />
         </div>

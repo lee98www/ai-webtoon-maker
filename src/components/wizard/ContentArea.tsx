@@ -56,38 +56,38 @@ export const ContentArea: React.FC = () => {
   return (
     <div className="h-full flex flex-col">
       {/* Step Header */}
-      <header className="border-b-4 border-ink-200 px-8 py-6 bg-white/50">
-        <div className="flex items-center gap-3 mb-2">
-          <span className="w-8 h-8 bg-toon-600 text-white flex items-center justify-center font-mono text-sm font-bold shadow-toon-sm">
+      <header className="border-b border-slate-200 px-6 py-5 bg-white">
+        <div className="flex items-center gap-3 mb-1">
+          <span className="w-7 h-7 bg-accent-500 text-white rounded-md flex items-center justify-center font-mono text-xs font-medium">
             {currentStep?.icon}
           </span>
-          <span className="text-xs font-bold text-ink-400 uppercase tracking-widest">
+          <span className="text-xs font-medium text-slate-400 uppercase tracking-wide">
             {currentStep?.label}
           </span>
         </div>
-        <h1 className="text-3xl font-black tracking-tight text-ink-900">
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-800">
           {currentStep?.labelKo}
         </h1>
       </header>
 
       {/* Step Content */}
-      <main className="flex-1 overflow-y-auto px-8 py-8">
+      <main className="flex-1 overflow-y-auto px-6 py-6">
         <div className="max-w-2xl mx-auto step-enter">
           {StepComponent && <StepComponent />}
         </div>
       </main>
 
       {/* Step Footer */}
-      <footer className="border-t-4 border-ink-200 px-8 py-6 bg-warm-100/50">
+      <footer className="border-t border-slate-200 px-6 py-4 bg-slate-50">
         <div className="max-w-2xl mx-auto flex justify-between items-center">
           <button
             onClick={goToPreviousStep}
             disabled={isFirstStep}
             className={`
-              px-6 py-3 font-bold text-sm border-2 border-ink-900 transition-all
+              px-4 py-2.5 font-medium text-sm rounded-md border transition-all
               ${isFirstStep
-                ? 'opacity-30 cursor-not-allowed bg-ink-100 text-ink-400'
-                : 'bg-white text-ink-900 hover:bg-ink-100 shadow-toon-sm hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px]'
+                ? 'opacity-40 cursor-not-allowed bg-slate-100 text-slate-400 border-slate-200'
+                : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50 hover:border-slate-400'
               }
             `}
           >
@@ -98,7 +98,7 @@ export const ContentArea: React.FC = () => {
             {!currentStep?.required && (
               <button
                 onClick={handleSkip}
-                className="px-6 py-3 font-bold text-sm text-ink-500 hover:text-ink-900 transition-colors"
+                className="px-4 py-2.5 font-medium text-sm text-slate-500 hover:text-slate-700 transition-colors"
               >
                 건너뛰기
               </button>
@@ -107,10 +107,10 @@ export const ContentArea: React.FC = () => {
               onClick={handleNext}
               disabled={isLastStep}
               className={`
-                px-6 py-3 font-bold text-sm border-2 border-ink-900 transition-all
+                px-4 py-2.5 font-medium text-sm rounded-md border transition-all
                 ${isLastStep
-                  ? 'opacity-30 cursor-not-allowed bg-ink-100 text-ink-400'
-                  : 'bg-toon-600 text-white hover:bg-toon-700 shadow-toon-sm hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px]'
+                  ? 'opacity-40 cursor-not-allowed bg-slate-100 text-slate-400 border-slate-200'
+                  : 'bg-accent-500 text-white border-accent-500 hover:bg-accent-600 hover:border-accent-600'
                 }
               `}
             >

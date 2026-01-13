@@ -1,7 +1,7 @@
 import React from 'react';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'toon';
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'accent';
   size?: 'sm' | 'md' | 'lg';
   isLoading?: boolean;
 }
@@ -16,41 +16,39 @@ export const Button: React.FC<ButtonProps> = ({
   ...props
 }) => {
   const baseStyle = `
-    inline-flex items-center justify-center font-bold tracking-wide
+    inline-flex items-center justify-center font-medium rounded-md
     transition-all duration-150 ease-out
-    disabled:opacity-40 disabled:cursor-not-allowed
-    focus:outline-none focus:ring-2 focus:ring-toon-500 focus:ring-offset-2
+    disabled:opacity-50 disabled:cursor-not-allowed
+    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500 focus-visible:ring-offset-2
   `;
 
   const sizeStyles: Record<string, string> = {
     sm: 'h-8 px-3 text-xs',
-    md: 'h-11 px-5 text-sm',
-    lg: 'h-14 px-8 text-base'
+    md: 'h-10 px-4 text-sm',
+    lg: 'h-12 px-6 text-base'
   };
 
   const variants: Record<string, string> = {
     primary: `
-      bg-ink-900 text-white border-2 border-ink-900
-      shadow-toon-sm btn-toon
-      hover:bg-ink-800
+      bg-slate-900 text-white border border-slate-900
+      hover:bg-slate-800
+      active:bg-slate-950
     `,
     secondary: `
-      bg-warm-100 text-ink-800 border-2 border-ink-900
-      shadow-toon-sm btn-toon
-      hover:bg-warm-200
+      bg-white text-slate-700 border border-slate-300
+      hover:bg-slate-50 hover:border-slate-400
     `,
     outline: `
-      bg-transparent text-ink-700 border-2 border-ink-300
-      hover:border-ink-900 hover:text-ink-900
+      bg-transparent text-slate-600 border border-slate-300
+      hover:bg-slate-50 hover:text-slate-900
     `,
     ghost: `
-      bg-transparent text-ink-500
-      hover:text-ink-900 hover:bg-warm-100
+      bg-transparent text-slate-500
+      hover:text-slate-900 hover:bg-slate-100
     `,
-    toon: `
-      bg-toon-600 text-white border-2 border-ink-900
-      shadow-toon-sm btn-toon
-      hover:bg-toon-700
+    accent: `
+      bg-accent-500 text-white border border-accent-500
+      hover:bg-accent-600 hover:border-accent-600
     `
   };
 

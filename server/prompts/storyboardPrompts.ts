@@ -6,6 +6,24 @@
 
 import { Genre } from './genreDirecting';
 
+// ============================================
+// 패널 레이아웃 시스템 (Panel Layout System)
+// 세로 스크롤 웹툰 최적화
+// ============================================
+
+export type PanelSizeRatio = 'small' | 'medium' | 'large' | 'full_bleed';
+export type ScrollPace = 'rapid' | 'normal' | 'pause';
+export type GutterSize = 'tight' | 'normal' | 'dramatic';
+
+export interface PanelLayoutRecommendation {
+  sizeRatio: PanelSizeRatio;
+  scrollPace: ScrollPace;
+  gutterBefore: GutterSize;
+  gutterAfter: GutterSize;
+  verticalAlign: 'flush' | 'centered' | 'offset';
+  rationale: string;
+}
+
 // 8컷 스토리 구조 (황금률)
 export interface StoryBeat {
   position: number;      // 1-8
@@ -14,6 +32,7 @@ export interface StoryBeat {
   description: string;
   cameraRecommendation: string[];
   dialogueGuideline: string;
+  layoutRecommendation: PanelLayoutRecommendation;  // 패널 레이아웃 권장사항
 }
 
 export type BeatType =
@@ -25,7 +44,7 @@ export type BeatType =
   | 'climax'         // 7컷: 감정/액션의 정점
   | 'cliffhanger';   // 8컷: 다음회 예고 (페이지 턴 훅)
 
-// 8컷 황금 구조
+// 8컷 황금 구조 (패널 레이아웃 권장사항 포함)
 export const EIGHT_PANEL_STRUCTURE: StoryBeat[] = [
   {
     position: 1,
@@ -33,7 +52,15 @@ export const EIGHT_PANEL_STRUCTURE: StoryBeat[] = [
     emotionalWeight: 0.6,
     description: "HOOK - 독자의 시선을 단번에 사로잡는 오프닝. 질문을 던지거나, 충격적인 장면으로 시작하거나, 미스터리를 제시",
     cameraRecommendation: ["wide establishing shot with dramatic element", "close-up on intriguing detail", "silhouette with mystery"],
-    dialogueGuideline: "짧고 강렬한 한 마디. 질문형이나 선언형. '...그날이었다.' '믿을 수 없었다.' '시작은 평범했다.'"
+    dialogueGuideline: "짧고 강렬한 한 마디. 질문형이나 선언형. '...그날이었다.' '믿을 수 없었다.' '시작은 평범했다.'",
+    layoutRecommendation: {
+      sizeRatio: 'large',
+      scrollPace: 'normal',
+      gutterBefore: 'normal',
+      gutterAfter: 'tight',
+      verticalAlign: 'flush',
+      rationale: "첫 컷은 크게 시작해서 독자의 시선을 사로잡는다. 바로 다음 컷으로 연결되도록 여백 최소화."
+    }
   },
   {
     position: 2,
@@ -41,7 +68,15 @@ export const EIGHT_PANEL_STRUCTURE: StoryBeat[] = [
     emotionalWeight: 0.4,
     description: "SETUP - 상황과 캐릭터 소개. 독자가 세계관과 주인공에 몰입할 수 있는 정보 제공",
     cameraRecommendation: ["medium shot introducing character", "establishing shot of location", "character in environment"],
-    dialogueGuideline: "자연스러운 상황 설명. 내레이션 또는 일상적 대화. 캐릭터 성격을 드러내는 말투."
+    dialogueGuideline: "자연스러운 상황 설명. 내레이션 또는 일상적 대화. 캐릭터 성격을 드러내는 말투.",
+    layoutRecommendation: {
+      sizeRatio: 'medium',
+      scrollPace: 'normal',
+      gutterBefore: 'tight',
+      gutterAfter: 'normal',
+      verticalAlign: 'centered',
+      rationale: "정보 전달 컷. 너무 크면 지루하고, 작으면 정보가 부족. 적당한 크기로 배경과 캐릭터 모두 표현."
+    }
   },
   {
     position: 3,
@@ -49,7 +84,15 @@ export const EIGHT_PANEL_STRUCTURE: StoryBeat[] = [
     emotionalWeight: 0.5,
     description: "DEVELOPMENT 1 - 갈등이나 문제의 씨앗이 등장. 독자가 '어? 뭔가 있네?' 느끼는 순간",
     cameraRecommendation: ["reaction shot", "over-shoulder revealing something", "detail shot on important element"],
-    dialogueGuideline: "복선을 깔거나 의문을 제기하는 대사. '그런데...' '이상하다...' '왜 갑자기...'"
+    dialogueGuideline: "복선을 깔거나 의문을 제기하는 대사. '그런데...' '이상하다...' '왜 갑자기...'",
+    layoutRecommendation: {
+      sizeRatio: 'small',
+      scrollPace: 'rapid',
+      gutterBefore: 'normal',
+      gutterAfter: 'tight',
+      verticalAlign: 'flush',
+      rationale: "작은 컷으로 빠르게 복선을 깔고 다음으로 넘어간다. 독자가 멈추지 않고 스크롤하게 유도."
+    }
   },
   {
     position: 4,
@@ -57,7 +100,15 @@ export const EIGHT_PANEL_STRUCTURE: StoryBeat[] = [
     emotionalWeight: 0.6,
     description: "DEVELOPMENT 2 - 갈등 구체화. 문제가 명확해지고 주인공이 반응",
     cameraRecommendation: ["two-shot showing conflict", "close-up on emotional reaction", "dynamic angle for tension"],
-    dialogueGuideline: "갈등을 명확히 하는 대사. 대립하는 두 입장이 드러나거나, 결정을 요구받는 상황."
+    dialogueGuideline: "갈등을 명확히 하는 대사. 대립하는 두 입장이 드러나거나, 결정을 요구받는 상황.",
+    layoutRecommendation: {
+      sizeRatio: 'medium',
+      scrollPace: 'normal',
+      gutterBefore: 'tight',
+      gutterAfter: 'normal',
+      verticalAlign: 'centered',
+      rationale: "갈등이 구체화되는 중요한 순간. 중간 크기로 긴장감 시작. 3컷과 연속으로 빠르게 읽히도록."
+    }
   },
   {
     position: 5,
@@ -65,7 +116,15 @@ export const EIGHT_PANEL_STRUCTURE: StoryBeat[] = [
     emotionalWeight: 0.75,
     description: "ESCALATION - 긴장감 급상승. '이제 피할 수 없다'는 불가피함. 심박수가 올라가는 패널",
     cameraRecommendation: ["dutch angle", "extreme close-up on eyes", "low angle for threat", "rapid zoom effect"],
-    dialogueGuideline: "짧고 급박한 대사. '안 돼!' '지금이야!' '이건...' 말 끝 흐림으로 긴장감."
+    dialogueGuideline: "짧고 급박한 대사. '안 돼!' '지금이야!' '이건...' 말 끝 흐림으로 긴장감.",
+    layoutRecommendation: {
+      sizeRatio: 'small',
+      scrollPace: 'rapid',
+      gutterBefore: 'tight',
+      gutterAfter: 'tight',
+      verticalAlign: 'offset',
+      rationale: "작은 컷들이 연속으로 터지며 속도감 창출. 비스듬한 배치로 긴장감 강조. 독자의 스크롤 속도 가속."
+    }
   },
   {
     position: 6,
@@ -73,7 +132,15 @@ export const EIGHT_PANEL_STRUCTURE: StoryBeat[] = [
     emotionalWeight: 0.9,
     description: "PRE-CLIMAX - 폭발 직전의 순간. 시간이 느려지는 듯한 연출. 모든 것이 다음 컷을 향해 수렴",
     cameraRecommendation: ["freeze frame before impact", "extreme close-up", "split second capture", "build-up composition"],
-    dialogueGuideline: "한 단어 또는 침묵. 효과음 중심. '...!' 또는 무음으로 긴장 극대화."
+    dialogueGuideline: "한 단어 또는 침묵. 효과음 중심. '...!' 또는 무음으로 긴장 극대화.",
+    layoutRecommendation: {
+      sizeRatio: 'medium',
+      scrollPace: 'pause',
+      gutterBefore: 'normal',
+      gutterAfter: 'dramatic',
+      verticalAlign: 'centered',
+      rationale: "시간이 느려지는 순간. 다음 클라이막스 전에 큰 여백으로 숨 고르기. 독자가 잠시 멈추게 만든다."
+    }
   },
   {
     position: 7,
@@ -81,7 +148,15 @@ export const EIGHT_PANEL_STRUCTURE: StoryBeat[] = [
     emotionalWeight: 1.0,
     description: "CLIMAX - 감정/액션의 최고점. 가장 큰 패널, 가장 강렬한 이미지. 카타르시스 또는 충격",
     cameraRecommendation: ["full panel impact shot", "dramatic lighting", "iconic pose", "maximum visual impact"],
-    dialogueGuideline: "절정의 대사. 선언, 외침, 또는 충격적 진실. 독자가 '와...' 할 수 있는 순간."
+    dialogueGuideline: "절정의 대사. 선언, 외침, 또는 충격적 진실. 독자가 '와...' 할 수 있는 순간.",
+    layoutRecommendation: {
+      sizeRatio: 'full_bleed',
+      scrollPace: 'pause',
+      gutterBefore: 'dramatic',
+      gutterAfter: 'dramatic',
+      verticalAlign: 'centered',
+      rationale: "가장 큰 풀블리드 패널. 화면 전체를 채우며 임팩트 극대화. 앞뒤로 큰 여백을 두어 독자가 완전히 멈추게."
+    }
   },
   {
     position: 8,
@@ -89,7 +164,15 @@ export const EIGHT_PANEL_STRUCTURE: StoryBeat[] = [
     emotionalWeight: 0.7,
     description: "CLIFFHANGER - 페이지 턴 훅. 독자가 다음 회차를 기다리게 만드는 장치. 새로운 질문, 반전, 또는 긴장 유지",
     cameraRecommendation: ["mysterious new element", "character reaction to unseen thing", "dramatic reveal setup", "question-mark composition"],
-    dialogueGuideline: "질문으로 끝나거나 말 끝을 흐리거나 새로운 미스터리 제시. '그건...' '설마...' '누구야, 넌?'"
+    dialogueGuideline: "질문으로 끝나거나 말 끝을 흐리거나 새로운 미스터리 제시. '그건...' '설마...' '누구야, 넌?'",
+    layoutRecommendation: {
+      sizeRatio: 'large',
+      scrollPace: 'normal',
+      gutterBefore: 'dramatic',
+      gutterAfter: 'normal',
+      verticalAlign: 'flush',
+      rationale: "클라이막스 여운 후 새로운 미스터리 제시. 크게 보여주되 풀블리드까진 아니게. 다음 회차 기대감 유발."
+    }
   }
 ];
 

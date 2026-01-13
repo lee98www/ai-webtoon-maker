@@ -28,173 +28,272 @@ export const RenderStep: React.FC = () => {
   }, [completedCount, markStepComplete]);
 
   return (
-    <div className="space-y-6">
-      <p className="text-ink-500 leading-relaxed">
-        AI가 각 패널 이미지를 생성합니다. 순차 모드는 이전 패널을 참조하여 일관성을 유지합니다.
-      </p>
-
-      {/* Mode Selector & Progress */}
-      <div className="flex flex-wrap gap-4 items-center justify-between bg-warm-100 border-2 border-ink-200 p-4">
-        {/* Mode Toggle */}
-        <div className="flex items-center gap-3">
-          <span className="text-xs font-bold text-ink-500 uppercase">Mode</span>
-          <div className="flex border-2 border-ink-900">
-            <button
-              onClick={() => setMode('sequential')}
-              disabled={isGenerating}
-              className={`px-3 py-1.5 text-xs font-bold uppercase transition-colors ${
-                mode === 'sequential'
-                  ? 'bg-ink-900 text-white'
-                  : 'bg-white text-ink-700 hover:bg-ink-100'
-              } ${isGenerating ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
-              순차
-            </button>
-            <button
-              onClick={() => setMode('parallel')}
-              disabled={isGenerating}
-              className={`px-3 py-1.5 text-xs font-bold uppercase transition-colors border-l-2 border-ink-900 ${
-                mode === 'parallel'
-                  ? 'bg-ink-900 text-white'
-                  : 'bg-white text-ink-700 hover:bg-ink-100'
-              } ${isGenerating ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
-              병렬
-            </button>
+    <div className="h-full flex bg-white">
+      {/* Left: Webtoon Preview (Vertical Scroll) */}
+      <div className="flex-1 flex flex-col">
+        {/* Preview Header */}
+        <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+          <div>
+            <h2 className="font-semibold text-slate-900">웹툰 미리보기</h2>
+            <p className="text-xs text-slate-500 mt-0.5">실제 웹툰 형태로 미리보기</p>
+          </div>
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-slate-500">{completedCount}/{project.panels.length} 완료</span>
           </div>
         </div>
 
-        {/* Progress Info */}
-        <div className="flex items-center gap-4 text-xs">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 bg-toon-500 rounded-full" />
-            <span className="text-ink-600">{completedCount}/{project.panels.length}</span>
+        {/* Webtoon Vertical Preview */}
+        <div className="flex-1 overflow-y-auto bg-slate-100">
+          <div className="max-w-md mx-auto py-8 px-4">
+            {/* Title Card */}
+            <div className="bg-white rounded-xl shadow-sm p-6 mb-4 text-center">
+              <h3 className="text-lg font-bold text-slate-900">{project.title || '제목 없음'}</h3>
+              {project.synopsis && (
+                <p className="text-sm text-slate-500 mt-2 line-clamp-2">{project.synopsis}</p>
+              )}
+            </div>
+
+            {/* Panels */}
+            <div className="space-y-2">
+              {project.panels.map((panel, index) => {
+                const isCurrentlyGenerating = panel.isGenerating || (isGenerating && currentIndex === index);
+                const isFailed = failedPanels.includes(panel.id);
+
+                return (
+                  <div key={panel.id} className="relative group">
+                    {/* Panel Image */}
+                    <div className={`
+                      aspect-[3/4] bg-white rounded-lg overflow-hidden shadow-sm transition-all
+                      ${isCurrentlyGenerating ? 'ring-2 ring-blue-400 ring-offset-2' : ''}
+                      ${isFailed ? 'ring-2 ring-red-400' : ''}
+                    `}>
+                      {isCurrentlyGenerating ? (
+                        <div className="w-full h-full flex flex-col items-center justify-center bg-slate-50">
+                          <div className="w-10 h-10 border-3 border-slate-300 border-t-slate-900 rounded-full animate-spin mb-3" />
+                          <span className="text-sm text-slate-500">패널 {index + 1} 생성 중...</span>
+                        </div>
+                      ) : panel.generatedImageUrl ? (
+                        <img
+                          src={panel.generatedImageUrl}
+                          alt={`Panel ${index + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center bg-slate-50">
+                          <div className={`
+                            w-12 h-12 rounded-lg flex items-center justify-center mb-2
+                            ${isFailed ? 'bg-red-100 text-red-500' : 'bg-slate-200 text-slate-400'}
+                          `}>
+                            <span className="text-lg font-bold">{isFailed ? '!' : index + 1}</span>
+                          </div>
+                          <span className="text-xs text-slate-400">
+                            {isFailed ? '생성 실패' : '이미지 대기 중'}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Regenerate Button (Hover) */}
+                      {!isCurrentlyGenerating && (
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                          <button
+                            onClick={() => regeneratePanel(panel.id)}
+                            disabled={isProcessing || isGenerating}
+                            className="px-4 py-2 bg-white text-slate-900 rounded-lg font-medium text-sm hover:bg-slate-100 transition"
+                          >
+                            {panel.generatedImageUrl ? '다시 생성' : isFailed ? '재시도' : '생성'}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Dialogue/Caption Overlay */}
+                    {(panel.dialogue || panel.caption) && panel.generatedImageUrl && (
+                      <div className="mt-2 px-2">
+                        {panel.dialogue && (
+                          <p className="text-sm text-slate-800 font-medium">"{panel.dialogue}"</p>
+                        )}
+                        {panel.caption && (
+                          <p className="text-xs text-slate-500 italic mt-1">{panel.caption}</p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Panel Number */}
+                    <div className="absolute top-2 right-2 w-6 h-6 bg-slate-900/80 text-white rounded-md flex items-center justify-center text-xs font-bold">
+                      {index + 1}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* End Card */}
+            <div className="bg-white rounded-xl shadow-sm p-6 mt-4 text-center">
+              <p className="text-sm text-slate-500">To be continued...</p>
+            </div>
           </div>
-
-          {isGenerating && estimatedTimeRemaining && (
-            <span className="text-ink-500">{formatTimeRemaining(estimatedTimeRemaining)}</span>
-          )}
-
-          {hasFailedPanels && !isGenerating && (
-            <button
-              onClick={retryFailed}
-              className="text-red-600 hover:text-red-700 flex items-center gap-1"
-            >
-              <span className="w-2 h-2 bg-red-500 rounded-full" />
-              {failedPanels.length}개 실패
-            </button>
-          )}
         </div>
       </div>
 
-      {/* Generate Button */}
-      <button
-        onClick={generateAll}
-        disabled={isProcessing || isGenerating || allCompleted}
-        className={`
-          w-full py-4 font-bold text-sm border-2 border-ink-900 transition-all
-          ${isProcessing || isGenerating || allCompleted
-            ? 'bg-ink-100 text-ink-400 cursor-not-allowed'
-            : 'bg-toon-600 text-white hover:bg-toon-700 shadow-toon-sm hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px]'
-          }
-        `}
-      >
-        {isGenerating ? (
-          <span className="flex items-center justify-center gap-2">
-            <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-            </svg>
-            렌더링 중... ({currentIndex + 1}/{project.panels.length})
-          </span>
-        ) : allCompleted ? (
-          '모든 패널 렌더링 완료'
-        ) : completedCount > 0 ? (
-          'CONTINUE RENDER'
-        ) : (
-          'RENDER ALL PANELS'
-        )}
-      </button>
+      {/* Right: Controls */}
+      <div className="w-[340px] flex flex-col bg-slate-50 border-l border-slate-200">
+        {/* Control Header */}
+        <div className="px-6 py-4 border-b border-slate-200 bg-white">
+          <h2 className="font-semibold text-slate-900">렌더링 설정</h2>
+        </div>
 
-      {/* Panel Grid */}
-      <div className="grid grid-cols-2 gap-4">
-        {project.panels.map((panel, index) => {
-          const isCurrentlyGenerating = panel.isGenerating || (isGenerating && currentIndex === index);
-          const isFailed = failedPanels.includes(panel.id);
-
-          return (
-            <div key={panel.id} className="group">
-              <div className={`
-                aspect-[3/4] bg-warm-100 relative overflow-hidden border-2 transition-all
-                ${isCurrentlyGenerating
-                  ? 'border-toon-500'
-                  : isFailed
-                    ? 'border-red-400'
-                    : 'border-ink-200 group-hover:border-ink-900'
-                }
-              `}>
-                {/* Loading State */}
-                {isCurrentlyGenerating && (
-                  <div className="absolute inset-0 z-10 bg-warm-50/95 flex flex-col items-center justify-center">
-                    <div className="w-8 h-8 border-4 border-ink-900 border-t-toon-500 rounded-full animate-spin mb-3" />
-                    <span className="text-[9px] font-bold tracking-widest text-ink-700">
-                      CUT {index + 1}
-                    </span>
-                  </div>
-                )}
-
-                {/* Generated Image */}
-                {panel.generatedImageUrl ? (
-                  <img
-                    src={panel.generatedImageUrl}
-                    className="w-full h-full object-cover"
-                    alt={`패널 ${index + 1}`}
-                  />
-                ) : (
-                  <div className="w-full h-full flex flex-col items-center justify-center">
-                    <div className={`w-10 h-10 mb-2 flex items-center justify-center ${
-                      isFailed ? 'bg-red-200' : 'bg-ink-200'
-                    }`}>
-                      <span className={`font-mono ${isFailed ? 'text-red-500' : 'text-ink-400'}`}>
-                        {isFailed ? '!' : index + 1}
-                      </span>
-                    </div>
-                    <span className={`text-[9px] font-bold uppercase ${
-                      isFailed ? 'text-red-400' : 'text-ink-300'
-                    }`}>
-                      {isFailed ? 'Failed' : `Cut ${index + 1}`}
-                    </span>
-                  </div>
-                )}
-
-                {/* Hover Overlay */}
-                {!isCurrentlyGenerating && (
-                  <div className="absolute inset-0 bg-ink-900/70 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      onClick={() => regeneratePanel(panel.id)}
-                      disabled={isProcessing || isGenerating}
-                      className="px-4 py-2 bg-white text-ink-900 font-bold text-xs border-2 border-ink-900 hover:bg-ink-100"
-                    >
-                      {panel.generatedImageUrl ? 'RE-GEN' : isFailed ? 'RETRY' : 'GEN'}
-                    </button>
-                  </div>
-                )}
-
-                {/* Panel number badge */}
-                <div className="absolute top-1 right-1 w-5 h-5 bg-ink-900 text-white flex items-center justify-center text-[10px] font-mono font-bold">
-                  {index + 1}
-                </div>
-              </div>
-
-              {/* Panel text info */}
-              <div className="mt-1.5 px-0.5">
-                <p className="text-[9px] text-ink-500 truncate">
-                  {panel.dialogue || panel.caption || panel.descriptionKo?.slice(0, 30) || '-'}
+        {/* Control Content */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          {/* Mode Selection */}
+          <div>
+            <label className="text-xs font-medium text-slate-500 uppercase tracking-wider block mb-3">
+              생성 모드
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => setMode('sequential')}
+                disabled={isGenerating}
+                className={`
+                  p-4 rounded-lg border-2 transition-all text-left
+                  ${mode === 'sequential'
+                    ? 'border-slate-900 bg-slate-900 text-white'
+                    : 'border-slate-200 bg-white hover:border-slate-300'
+                  }
+                  ${isGenerating ? 'opacity-50 cursor-not-allowed' : ''}
+                `}
+              >
+                <span className={`text-sm font-medium ${mode === 'sequential' ? 'text-white' : 'text-slate-900'}`}>
+                  순차 모드
+                </span>
+                <p className={`text-xs mt-1 ${mode === 'sequential' ? 'text-slate-300' : 'text-slate-500'}`}>
+                  일관성 유지
                 </p>
-              </div>
+              </button>
+              <button
+                onClick={() => setMode('parallel')}
+                disabled={isGenerating}
+                className={`
+                  p-4 rounded-lg border-2 transition-all text-left
+                  ${mode === 'parallel'
+                    ? 'border-slate-900 bg-slate-900 text-white'
+                    : 'border-slate-200 bg-white hover:border-slate-300'
+                  }
+                  ${isGenerating ? 'opacity-50 cursor-not-allowed' : ''}
+                `}
+              >
+                <span className={`text-sm font-medium ${mode === 'parallel' ? 'text-white' : 'text-slate-900'}`}>
+                  병렬 모드
+                </span>
+                <p className={`text-xs mt-1 ${mode === 'parallel' ? 'text-slate-300' : 'text-slate-500'}`}>
+                  빠른 생성
+                </p>
+              </button>
             </div>
-          );
-        })}
+          </div>
+
+          {/* Progress */}
+          <div>
+            <label className="text-xs font-medium text-slate-500 uppercase tracking-wider block mb-3">
+              진행 상황
+            </label>
+            <div className="bg-white border border-slate-200 rounded-lg p-4">
+              {/* Progress Bar */}
+              <div className="h-2 bg-slate-100 rounded-full overflow-hidden mb-3">
+                <div
+                  className="h-full bg-slate-900 rounded-full transition-all duration-300"
+                  style={{ width: `${(completedCount / project.panels.length) * 100}%` }}
+                />
+              </div>
+
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-600">
+                  {completedCount} / {project.panels.length} 패널
+                </span>
+                {isGenerating && estimatedTimeRemaining && (
+                  <span className="text-slate-500">
+                    {formatTimeRemaining(estimatedTimeRemaining)}
+                  </span>
+                )}
+              </div>
+
+              {hasFailedPanels && !isGenerating && (
+                <button
+                  onClick={retryFailed}
+                  className="w-full mt-3 py-2 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition"
+                >
+                  {failedPanels.length}개 실패 - 재시도
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Render Button */}
+          <button
+            onClick={generateAll}
+            disabled={isProcessing || isGenerating || allCompleted}
+            className={`
+              w-full py-4 rounded-xl font-medium text-base transition-all flex items-center justify-center gap-2
+              ${isProcessing || isGenerating || allCompleted
+                ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                : 'bg-slate-900 text-white hover:bg-slate-800'
+              }
+            `}
+          >
+            {isGenerating ? (
+              <>
+                <svg className="animate-spin w-5 h-5" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                <span>렌더링 중... ({currentIndex + 1}/{project.panels.length})</span>
+              </>
+            ) : allCompleted ? (
+              <>
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <span>모든 패널 완료</span>
+              </>
+            ) : completedCount > 0 ? (
+              <>
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>이어서 렌더링</span>
+              </>
+            ) : (
+              <>
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                <span>모든 패널 렌더링</span>
+              </>
+            )}
+          </button>
+
+          {/* Tips */}
+          <div className="p-4 bg-slate-100 rounded-lg">
+            <h4 className="text-xs font-medium text-slate-700 mb-2">팁</h4>
+            <ul className="text-xs text-slate-500 space-y-1">
+              <li>• 순차 모드는 이전 패널을 참조하여 일관성을 유지합니다</li>
+              <li>• 병렬 모드는 빠르지만 일관성이 낮을 수 있습니다</li>
+              <li>• 개별 패널은 미리보기에서 클릭하여 재생성할 수 있습니다</li>
+            </ul>
+          </div>
+        </div>
+
+        {/* Export Section */}
+        {allCompleted && (
+          <div className="px-6 py-4 border-t border-slate-200 bg-white">
+            <button className="w-full py-3 bg-emerald-600 text-white rounded-lg font-medium text-sm hover:bg-emerald-700 transition flex items-center justify-center gap-2">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              <span>웹툰 내보내기</span>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

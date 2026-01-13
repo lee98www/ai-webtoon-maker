@@ -195,11 +195,11 @@ export const BlueprintStep: React.FC = () => {
                   )}
                 </div>
 
-                {/* Beat Type Badge */}
-                {panel.beatType && (
+                {/* Time Offset Badge */}
+                {panel.timeOffset && (
                   <div className="absolute top-2 right-2">
-                    <span className="text-[9px] px-1.5 py-0.5 bg-slate-800/80 text-white rounded">
-                      {panel.beatType}
+                    <span className="text-[9px] px-1.5 py-0.5 bg-emerald-600/90 text-white rounded font-mono">
+                      {panel.timeOffset}
                     </span>
                   </div>
                 )}
@@ -320,6 +320,22 @@ export const BlueprintStep: React.FC = () => {
                   <option value="worms_eye">Worm's Eye - 극적 위압감</option>
                 </select>
               </div>
+
+              {/* Visual Details */}
+              {selectedPanel.visualDetails && selectedPanel.visualDetails.length > 0 && (
+                <div>
+                  <label className="text-xs font-medium text-slate-500 uppercase tracking-wider block mb-2">
+                    시각적 디테일
+                  </label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {selectedPanel.visualDetails.map((detail, i) => (
+                      <span key={i} className="text-xs px-2 py-1 bg-rose-50 text-rose-600 rounded-full">
+                        {detail}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Composition */}
               {selectedPanel.composition && (

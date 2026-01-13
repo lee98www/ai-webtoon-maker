@@ -322,9 +322,26 @@ export const useProjectStore = create<ProjectState>()(
       name: 'tooncraft-project',
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
-        // 저장할 항목만 선택 (일시적 UI 상태 제외)
+        // 저장할 항목만 선택 (일시적 UI 상태 및 대용량 이미지 제외)
         step: state.step,
-        project: state.project,
+        project: {
+          ...state.project,
+          // 생성된 패널 이미지 제외 (base64, ~1.5MB/개)
+          panels: state.project.panels.map(panel => {
+            const { generatedImageUrl, ...rest } = panel;
+            return rest;
+          }),
+          // 캐릭터 레퍼런스 이미지 제외
+          characters: state.project.characters.map(char => ({
+            ...char,
+            referenceImages: [],
+          })),
+          // 스타일 레퍼런스 이미지 제외
+          styleRef: state.project.styleRef ? {
+            ...state.project.styleRef,
+            images: [],
+          } : null,
+        },
         ideaInput: state.ideaInput,
         wizard: {
           currentStepId: state.wizard.currentStepId,

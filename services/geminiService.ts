@@ -164,93 +164,68 @@ export const refineSynopsis = async (input: string, genre: Genre): Promise<strin
 export const generateStoryboard = async (
   synopsis: string,
   genre: Genre,
-  count: number = 8
+  _count: number = 8
 ): Promise<StoryboardResponse> => {
   const ai = getAiClient();
 
-  const genreDesc = GENRE_DESCRIPTIONS[genre] || '';
+  const prompt = `당신은 영화 감독급 웹툰 연출가다.
 
-  const prompt = `당신은 프로페셔널 웹툰 콘티 작가이자 **영화 감독급 연출가**입니다.
+[입력]
+소재: ${synopsis}
+장르: ${genre}
 
-시놉시스: ${synopsis}
-장르: ${genre} - ${genreDesc}
-총 ${count}컷의 웹툰 콘티를 생성하세요.
+[핵심 원칙]
+8컷 = 한 순간의 하이라이트. 전체 이야기 금지.
+소재에서 가장 임팩트 있는 **단일 순간**을 선택해 8컷으로 분해하라.
 
-[연출 철학 - 반드시 준수]
-- 카메라는 감정을 전달하는 도구. 모든 컷이 같은 앵글이면 죽은 연출이다.
-- 스토리의 리듬과 긴장감에 따라 샷 크기와 앵글을 **의도적으로** 변화시켜라.
-- 이전 컷과의 대비, 다음 컷으로의 흐름을 고려한 시퀀스를 구성하라.
-- 연속 3컷 이상 동일한 shotSize나 cameraAngle을 사용하지 마라.
+[장르별 하이라이트 예시]
+- Action: 펀치가 얼굴에 닿는 0.5초 / 칼날이 스치는 순간 / 폭발 직전~직후
+- Romance: 고백 직전 떨리는 입술 / 눈이 마주치는 순간 / 손이 닿는 찰나
+- Horror: 뒤에 뭔가 있다는 걸 깨닫는 순간 / 문이 열리는 3초 / 눈을 마주치는 공포
+- Fantasy: 마법이 발동되는 순간 / 용이 나타나는 임팩트 / 각성의 순간
+- Noir: 총구가 겨눠지는 순간 / 배신을 깨닫는 표정 / 비 오는 거리의 대면
+- Slice of Life: 눈물이 흐르는 순간 / 웃음이 터지는 찰나 / 깨달음의 순간
 
-[사용 가능한 샷 크기 - shotSize]
-- extreme_wide: 광활한 풍경, 스케일 강조, 인물이 작게
-- wide: 환경 + 캐릭터 전체 맥락
-- full: 캐릭터 전신
-- medium_full: 무릎 위
-- medium: 허리 위 (대화 기본)
-- medium_close: 가슴 위 (감정 전달)
-- close_up: 얼굴 (강렬한 감정)
-- extreme_close_up: 눈/입/손 디테일 (결정적 순간)
+[8컷 분해법]
+1-2컷: 순간 직전의 긴장 (손끝, 눈동자, 공기의 정적)
+3-5컷: 핵심 순간을 3개 앵글로 분해 (와이드→클로즈업→익스트림 클로즈업 OR 반대)
+6-7컷: 순간 직후 반응 (표정, 여파, 충격)
+8컷: 강렬한 여운 또는 반전
 
-[사용 가능한 카메라 앵글 - cameraAngle]
-- eye_level: 중립, 관객과 동일시
-- low_angle: 위압감, 영웅적, 힘
-- high_angle: 취약함, 열세, 압도당함
-- dutch_angle: 불안, 긴장, 혼란
-- over_shoulder: 대화 장면, 관계성
-- pov: 1인칭 시점, 몰입
-- birds_eye: 전지적 시점, 운명적
-- worms_eye: 극도로 낮은 시점, 극적 위압감
+[시각적 디테일 - 반드시 포함]
+각 컷의 description에 구체적 디테일을 넣어라:
+- 땀방울, 떨리는 손, 확대되는 눈동자
+- 흩날리는 머리카락, 옷자락의 펄럭임
+- 빛과 그림자, 역광, 실루엣
+- 속도선, 집중선, 임팩트 이펙트
 
-[장르별 선호 스타일 참고]
-- Action: low_angle, dutch_angle, worms_eye 선호. 빠른 샷 전환, 역동적 구도
-- Romance: eye_level, over_shoulder 선호. 부드러운 흐름, 친밀한 거리감
-- Horror: dutch_angle, high_angle, pov 선호. 불안한 프레이밍, 여백 활용
-- Fantasy: wide, extreme_wide, low_angle 선호. 스케일 강조
-- Slice of Life: eye_level, medium 중심. 자연스러운 관찰자 시점
-- Noir: dutch_angle, low_angle, over_shoulder 선호. 그림자와 대비
-- Politics: low_angle, high_angle 대비. 권력 역학 표현
+[샷 크기] extreme_wide / wide / full / medium / medium_close / close_up / extreme_close_up
+[앵글] eye_level / low_angle / high_angle / dutch_angle / over_shoulder / pov / birds_eye / worms_eye
 
-[핵심 원칙 - 하이라이트 연출]
-⚠️ 8컷에 전체 이야기를 담지 마라. 기승전결 구조 금지.
-✅ 시놉시스에서 가장 임팩트 있는 **한 순간**을 선택하라.
-✅ 그 순간을 8컷으로 **디테일하게** 펼쳐라.
-
-예시:
-- "복수를 다짐하는 남자" → 복수 전체 스토리 X → 복수를 결심하는 **그 순간**의 표정, 주먹, 눈빛, 회상
-- "첫사랑 고백" → 만남부터 결말 X → 고백 직전 긴장, 말을 꺼내는 순간, 상대 반응의 **디테일**
-
-[8컷 시퀀스 설계]
-- 1-2컷: 순간의 직전 - 긴장감 구축, 상황 암시
-- 3-5컷: 핵심 순간 - 감정/액션의 절정을 여러 앵글로 분해
-- 6-7컷: 반응/여파 - 그 순간 직후의 임팩트
-- 8컷: 여운 또는 반전 - 강렬한 마무리
-
-각 컷은 **같은 순간을 다른 각도로** 보여주거나, **0.5초 단위의 미세한 시간 흐름**을 표현할 수 있다.
-
-[출력 JSON 형식]
+[JSON 출력]
 {
-  "title": "작품 제목",
-  "characterVisuals": "주인공 외형 상세 설명 (영어, 얼굴/머리/체형/의상 포함)",
+  "title": "제목",
+  "characterVisuals": "캐릭터 외형 (영어, 얼굴/머리/체형/의상)",
+  "highlightMoment": "선택한 하이라이트 순간 설명 (한국어, 1줄)",
   "panels": [
     {
       "panelNumber": 1,
-      "beatType": "hook",
-      "emotionalWeight": 0.7,
-      "description": "영어로 된 상세 시각 묘사 (캐릭터 외형 키워드 포함)",
-      "descriptionKo": "한국어 연출 가이드",
-      "dialogue": "캐릭터 대사 (한국어, 40자 이내)",
-      "caption": "나레이션 (한국어, 80자 이내)",
-      "characterFocus": "초점 캐릭터",
-      "shotSize": "wide | medium | close_up 등 위 목록에서 선택",
-      "cameraAngle": "low_angle | dutch_angle 등 위 목록에서 선택",
-      "composition": "구도 설명 (삼분법, 대각선, 중앙배치, 여백활용 등)",
-      "directorNote": "이 앵글과 샷을 선택한 연출 의도 (한국어, 1줄)"
+      "timeOffset": "0.0s",
+      "description": "영어 시각 묘사 (디테일 필수: 땀, 떨림, 빛, 그림자 등)",
+      "descriptionKo": "한국어 연출 노트",
+      "shotSize": "close_up",
+      "cameraAngle": "low_angle",
+      "visualDetails": ["trembling fingers", "sweat on forehead", "harsh shadows"],
+      "dialogue": "",
+      "caption": "",
+      "characterFocus": "주인공",
+      "composition": "삼분법 우측, 여백 좌측",
+      "directorNote": "긴장감 극대화를 위한 손 클로즈업"
     }
   ]
 }
 
-dialogue와 caption은 빈 문자열 가능. JSON만 출력하세요.`;
+dialogue/caption은 최소화. 시각으로 말하라. JSON만 출력.`;
 
   const response = await ai.models.generateContent({
     model: TEXT_MODEL,

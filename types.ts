@@ -153,21 +153,24 @@ export interface TemporalDirective {
 export interface PanelConfig {
   id: string;
   panelNumber: number;
-  beatType?: BeatType;           // 8컷 구조에서의 스토리 비트
-  emotionalWeight?: number;      // 감정 강도 (0.0-1.0)
-  emotionalState?: EmotionalState;  // 미시적 감정 상태
+  timeOffset?: string;           // 시간 오프셋 (예: "0.0s", "0.5s")
   description: string;           // Visual description for AI (English)
   descriptionKo: string;         // Visual description for User (Korean)
   dialogue: string;              // Text for speech bubble (Korean)
-  dialogueEntries?: DialogueEntry[];  // 다중 말풍선 (확장)
   caption: string;               // Narration text (Korean)
   characterFocus: string;        // Who is in the shot (English)
   cameraAngle: string;           // Camera angle: low_angle, dutch_angle, etc.
   shotSize?: string;             // Shot size: wide, medium, close_up, etc.
+  visualDetails?: string[];      // 시각적 디테일 배열 (땀방울, 떨림 등)
   composition?: string;          // Composition description (rule of thirds, diagonal, etc.)
   directorNote?: string;         // Director's intention for this shot (Korean)
-  layout?: PanelLayoutConfig;    // 패널 레이아웃 설정
-  temporalEffect?: TemporalDirective;  // 시간 연출 효과
+  // Legacy fields (하위 호환성)
+  beatType?: BeatType;
+  emotionalWeight?: number;
+  emotionalState?: EmotionalState;
+  dialogueEntries?: DialogueEntry[];
+  layout?: PanelLayoutConfig;
+  temporalEffect?: TemporalDirective;
   generatedImageUrl?: string;
   isGenerating?: boolean;
 }
@@ -176,6 +179,7 @@ export interface WebtoonProject {
   title: string;
   synopsis: string;
   characterVisuals: string; // Text-based character definition
+  highlightMoment?: string; // 선택된 하이라이트 순간 설명
   genre: Genre;
   artStyle: ArtStyle;
   panels: PanelConfig[];

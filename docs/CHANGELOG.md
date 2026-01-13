@@ -6,6 +6,38 @@
 
 ---
 
+## [2026-01-13] 카메라 앵글 창의적 연출 시스템
+
+### 문제
+- 패널 콘티 생성 시 카메라 앵글이 항상 "클로즈업"으로 고정
+- 연출 다양성 없음, 죽은 연출
+
+### 변경
+- `services/geminiService.ts` - generateStoryboard 프롬프트 전면 개편
+  - AI에게 "영화 감독급 연출가" 역할 부여
+  - 샷 크기 8종 + 카메라 앵글 8종 명시
+  - 장르별 선호 스타일 가이드
+  - "연속 3컷 동일 앵글 금지" 규칙
+  - 연출 의도(directorNote) 필드 추가
+
+- `types.ts` - PanelConfig 타입 확장
+  - `shotSize`: 샷 크기 (wide, medium, close_up 등)
+  - `composition`: 구도 설명
+  - `directorNote`: 연출 의도 (한국어)
+
+- `src/components/steps/storyboard/BlueprintStep.tsx` - UI 개선
+  - 패널 카드에 샷 크기/앵글 배지 표시
+  - 편집 패널에 연출 의도 박스 추가
+  - 샷 크기 드롭다운 추가
+  - 카메라 앵글 드롭다운 옵션 확장
+
+### 관련 파일
+- `services/geminiService.ts` (라인 172-243)
+- `types.ts` (라인 165-168)
+- `src/components/steps/storyboard/BlueprintStep.tsx`
+
+---
+
 ## [2026-01-13] 시스템 문서 추가
 
 ### 추가

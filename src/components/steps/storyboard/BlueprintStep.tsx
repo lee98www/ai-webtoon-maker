@@ -170,6 +170,21 @@ export const BlueprintStep: React.FC = () => {
 
                 {/* Panel Info */}
                 <div className="p-3 bg-white border-t border-slate-100">
+                  {/* Shot & Angle Info */}
+                  {(panel.shotSize || panel.cameraAngle) && (
+                    <div className="flex gap-1 mb-1.5 flex-wrap">
+                      {panel.shotSize && (
+                        <span className="text-[9px] px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded">
+                          {panel.shotSize.replace('_', ' ')}
+                        </span>
+                      )}
+                      {panel.cameraAngle && (
+                        <span className="text-[9px] px-1.5 py-0.5 bg-purple-50 text-purple-600 rounded">
+                          {panel.cameraAngle.replace('_', ' ')}
+                        </span>
+                      )}
+                    </div>
+                  )}
                   <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">
                     {panel.descriptionKo || panel.description || '설명 없음'}
                   </p>
@@ -206,7 +221,18 @@ export const BlueprintStep: React.FC = () => {
                 </span>
                 <div>
                   <h3 className="font-semibold text-slate-900">패널 {selectedPanelIndex! + 1}</h3>
-                  <p className="text-xs text-slate-500">{selectedPanel.cameraAngle}</p>
+                  <div className="flex gap-1.5 mt-1">
+                    {selectedPanel.shotSize && (
+                      <span className="text-[10px] px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded">
+                        {selectedPanel.shotSize.replace('_', ' ')}
+                      </span>
+                    )}
+                    {selectedPanel.cameraAngle && (
+                      <span className="text-[10px] px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded">
+                        {selectedPanel.cameraAngle.replace('_', ' ')}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -231,6 +257,46 @@ export const BlueprintStep: React.FC = () => {
                 </p>
               </div>
 
+              {/* Director's Note */}
+              {selectedPanel.directorNote && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                  <div className="flex items-start gap-2">
+                    <svg className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                    <div>
+                      <p className="text-xs font-medium text-amber-700 mb-0.5">연출 의도</p>
+                      <p className="text-xs text-amber-600">{selectedPanel.directorNote}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Shot Size */}
+              <div>
+                <label className="text-xs font-medium text-slate-500 uppercase tracking-wider block mb-2">
+                  샷 크기
+                </label>
+                <select
+                  value={selectedPanel.shotSize || ''}
+                  onChange={(e) =>
+                    updatePanelByIndex(selectedPanelIndex!, { shotSize: e.target.value })
+                  }
+                  className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:border-slate-400 focus:ring-0"
+                >
+                  <option value="">선택...</option>
+                  <option value="extreme_wide">Extreme Wide - 광활한 풍경</option>
+                  <option value="wide">Wide - 환경 + 캐릭터</option>
+                  <option value="full">Full - 전신</option>
+                  <option value="medium_full">Medium Full - 무릎 위</option>
+                  <option value="medium">Medium - 허리 위</option>
+                  <option value="medium_close">Medium Close - 가슴 위</option>
+                  <option value="close_up">Close-up - 얼굴</option>
+                  <option value="extreme_close_up">Extreme Close-up - 디테일</option>
+                </select>
+              </div>
+
               {/* Camera Angle */}
               <div>
                 <label className="text-xs font-medium text-slate-500 uppercase tracking-wider block mb-2">
@@ -243,16 +309,29 @@ export const BlueprintStep: React.FC = () => {
                   }
                   className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:border-slate-400 focus:ring-0"
                 >
-                  <option value="close-up">Close-up</option>
-                  <option value="medium shot">Medium Shot</option>
-                  <option value="wide shot">Wide Shot</option>
-                  <option value="extreme close-up">Extreme Close-up</option>
-                  <option value="bird's eye view">Bird's Eye View</option>
-                  <option value="low angle">Low Angle</option>
-                  <option value="high angle">High Angle</option>
-                  <option value="over-the-shoulder">Over-the-shoulder</option>
+                  <option value="">선택...</option>
+                  <option value="eye_level">Eye Level - 중립, 동일시</option>
+                  <option value="low_angle">Low Angle - 위압감, 영웅적</option>
+                  <option value="high_angle">High Angle - 취약함, 열세</option>
+                  <option value="dutch_angle">Dutch Angle - 불안, 긴장</option>
+                  <option value="over_shoulder">Over Shoulder - 대화, 관계</option>
+                  <option value="pov">POV - 1인칭 시점</option>
+                  <option value="birds_eye">Bird's Eye - 전지적 시점</option>
+                  <option value="worms_eye">Worm's Eye - 극적 위압감</option>
                 </select>
               </div>
+
+              {/* Composition */}
+              {selectedPanel.composition && (
+                <div>
+                  <label className="text-xs font-medium text-slate-500 uppercase tracking-wider block mb-2">
+                    구도
+                  </label>
+                  <p className="text-sm text-slate-600 bg-slate-100 px-3 py-2 rounded-lg">
+                    {selectedPanel.composition}
+                  </p>
+                </div>
+              )}
 
               {/* Dialogue */}
               <div>

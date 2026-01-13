@@ -162,7 +162,10 @@ export interface PanelConfig {
   dialogueEntries?: DialogueEntry[];  // 다중 말풍선 (확장)
   caption: string;               // Narration text (Korean)
   characterFocus: string;        // Who is in the shot (English)
-  cameraAngle: string;           // Close-up, wide, etc. (English)
+  cameraAngle: string;           // Camera angle: low_angle, dutch_angle, etc.
+  shotSize?: string;             // Shot size: wide, medium, close_up, etc.
+  composition?: string;          // Composition description (rule of thirds, diagonal, etc.)
+  directorNote?: string;         // Director's intention for this shot (Korean)
   layout?: PanelLayoutConfig;    // 패널 레이아웃 설정
   temporalEffect?: TemporalDirective;  // 시간 연출 효과
   generatedImageUrl?: string;

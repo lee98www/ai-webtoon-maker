@@ -169,19 +169,54 @@ export const generateStoryboard = async (
 
   const genreDesc = GENRE_DESCRIPTIONS[genre] || '';
 
-  const prompt = `당신은 프로페셔널 웹툰 콘티 작가입니다.
+  const prompt = `당신은 프로페셔널 웹툰 콘티 작가이자 **영화 감독급 연출가**입니다.
 
 시놉시스: ${synopsis}
 장르: ${genre} - ${genreDesc}
 총 ${count}컷의 웹툰 콘티를 생성하세요.
 
+[연출 철학 - 반드시 준수]
+- 카메라는 감정을 전달하는 도구. 모든 컷이 같은 앵글이면 죽은 연출이다.
+- 스토리의 리듬과 긴장감에 따라 샷 크기와 앵글을 **의도적으로** 변화시켜라.
+- 이전 컷과의 대비, 다음 컷으로의 흐름을 고려한 시퀀스를 구성하라.
+- 연속 3컷 이상 동일한 shotSize나 cameraAngle을 사용하지 마라.
+
+[사용 가능한 샷 크기 - shotSize]
+- extreme_wide: 광활한 풍경, 스케일 강조, 인물이 작게
+- wide: 환경 + 캐릭터 전체 맥락
+- full: 캐릭터 전신
+- medium_full: 무릎 위
+- medium: 허리 위 (대화 기본)
+- medium_close: 가슴 위 (감정 전달)
+- close_up: 얼굴 (강렬한 감정)
+- extreme_close_up: 눈/입/손 디테일 (결정적 순간)
+
+[사용 가능한 카메라 앵글 - cameraAngle]
+- eye_level: 중립, 관객과 동일시
+- low_angle: 위압감, 영웅적, 힘
+- high_angle: 취약함, 열세, 압도당함
+- dutch_angle: 불안, 긴장, 혼란
+- over_shoulder: 대화 장면, 관계성
+- pov: 1인칭 시점, 몰입
+- birds_eye: 전지적 시점, 운명적
+- worms_eye: 극도로 낮은 시점, 극적 위압감
+
+[장르별 선호 스타일 참고]
+- Action: low_angle, dutch_angle, worms_eye 선호. 빠른 샷 전환, 역동적 구도
+- Romance: eye_level, over_shoulder 선호. 부드러운 흐름, 친밀한 거리감
+- Horror: dutch_angle, high_angle, pov 선호. 불안한 프레이밍, 여백 활용
+- Fantasy: wide, extreme_wide, low_angle 선호. 스케일 강조
+- Slice of Life: eye_level, medium 중심. 자연스러운 관찰자 시점
+- Noir: dutch_angle, low_angle, over_shoulder 선호. 그림자와 대비
+- Politics: low_angle, high_angle 대비. 권력 역학 표현
+
 [8컷 구조]
-1컷: 훅 - 독자를 사로잡는 오프닝
-2컷: 셋업 - 상황/캐릭터 소개
-3-4컷: 전개 - 스토리 진행
-5-6컷: 고조 - 긴장감 상승
-7컷: 클라이막스 - 감정의 정점
-8컷: 클리프행어 - 다음이 궁금하도록
+1컷 (hook): 독자를 사로잡는 오프닝 - 강렬한 첫인상
+2컷 (setup): 상황/캐릭터 소개 - 맥락 제공
+3-4컷 (development): 전개 - 스토리 진행
+5-6컷 (escalation): 고조 - 긴장감 상승
+7컷 (climax): 감정/액션의 정점 - 이전 컷과 극적 대비 필수
+8컷 (cliffhanger): 다음이 궁금하도록 - 페이지 턴 유도
 
 [출력 JSON 형식]
 {
@@ -197,7 +232,10 @@ export const generateStoryboard = async (
       "dialogue": "캐릭터 대사 (한국어, 40자 이내)",
       "caption": "나레이션 (한국어, 80자 이내)",
       "characterFocus": "초점 캐릭터",
-      "cameraAngle": "카메라 앵글"
+      "shotSize": "wide | medium | close_up 등 위 목록에서 선택",
+      "cameraAngle": "low_angle | dutch_angle 등 위 목록에서 선택",
+      "composition": "구도 설명 (삼분법, 대각선, 중앙배치, 여백활용 등)",
+      "directorNote": "이 앵글과 샷을 선택한 연출 의도 (한국어, 1줄)"
     }
   ]
 }

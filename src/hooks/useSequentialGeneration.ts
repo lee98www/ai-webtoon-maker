@@ -1,45 +1,7 @@
 import { useCallback, useState } from 'react';
 import { useProjectStore } from '../store/projectStore';
 import { PanelConfig, ArtStyle, Genre } from '../../types';
-
-// Server API call for panel image generation
-async function generatePanelImageViaServer(
-  panel: PanelConfig,
-  style: ArtStyle,
-  genre: Genre,
-  characterVisuals: string,
-  panelIndex: number,
-  options: {
-    characterRefs?: Array<{ name: string; description: string; image: string }>;
-    styleRef?: string | null;
-    previousPanelImage?: string;
-    includeDialogue?: boolean;
-  }
-): Promise<string> {
-  const response = await fetch('http://localhost:4001/api/generate-panel', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      panel,
-      style,
-      genre,
-      characterVisuals,
-      panelIndex,
-      characterRefs: options.characterRefs || [],
-      styleRef: options.styleRef || null,
-      previousPanelImage: options.previousPanelImage || null,
-      includeDialogue: options.includeDialogue ?? false
-    })
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.error || `패널 생성 실패 (${response.status})`);
-  }
-
-  const data = await response.json();
-  return data.imageUrl;
-}
+import { generatePanelImage } from '../../services/geminiService';
 
 export type GenerationMode = 'sequential' | 'parallel';
 
@@ -94,8 +56,8 @@ export function useSequentialGeneration(options: UseSequentialGenerationOptions 
         // Prepare style reference
         const styleRef = project.styleRef?.images[0] || null;
 
-        // Generate with references via server API
-        const url = await generatePanelImageViaServer(
+        // Generate with direct Gemini API call
+        const url = await generatePanelImage(
           panel,
           project.artStyle,
           project.genre,

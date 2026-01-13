@@ -279,8 +279,8 @@ export const generateStoryboard = async (
       "shotSize": "샷",
       "cameraAngle": "앵글",
       "visualDetails": ["디테일1", "디테일2", "디테일3"],
-      "dialogue": "대사",
-      "caption": "",
+      "dialogue": "캐릭터 대사 (한국어, 짧고 임팩트 있게)",
+      "caption": "나레이션 (선택)",
       "characterFocus": "피사체",
       "composition": "구도 (삼분법, 대각선, 프레임인프레임 등)",
       "directorNote": "연출 의도 (왜 이 앵글인지)"
@@ -288,7 +288,13 @@ export const generateStoryboard = async (
   ]
 }
 
-dialogue는 필요한 경우만. 시각으로 말하라. JSON만 출력.`;
+[대사 규칙 - 중요]
+- 8컷 중 최소 3~4컷에는 반드시 대사(dialogue) 포함
+- 대사는 한국어, 짧고 임팩트 있게 (1~2문장)
+- 감정적 순간, 결정적 대사 필수
+- 클로즈업/익스트림 클로즈업 컷에 대사 배치 권장
+
+JSON만 출력.`;
 
   const response = await ai.models.generateContent({
     model: TEXT_MODEL,
@@ -392,13 +398,30 @@ Atmosphere: ${locationInfo.atmosphere}
 Time: ${locationInfo.timeOfDay}`;
   }
 
-  // 말풍선 처리 (대사가 있으면 포함)
+  // 말풍선 처리 (대사가 있으면 필수로 포함)
   let dialogueSection = '';
+  let speechBubbleRule = '- DO NOT render any text or speech bubbles';
+
   if (panel.dialogue && panel.dialogue.trim()) {
-    dialogueSection = `\n[SPEECH BUBBLE - RENDER IN IMAGE]
+    dialogueSection = `
+
+[SPEECH BUBBLE - MANDATORY]
+⚠️ THIS PANEL MUST INCLUDE A SPEECH BUBBLE WITH THE FOLLOWING TEXT:
 Text: "${panel.dialogue}"
-Style: Standard round speech bubble with tail pointing to speaker
-Position: Upper area of panel, avoid covering face`;
+
+SPEECH BUBBLE REQUIREMENTS:
+- Style: Clean white speech bubble with black outline
+- Shape: Oval/rounded rectangle shape
+- Tail: Clear tail pointing to the speaker's mouth
+- Position: Upper portion of panel (top 1/3), NOT covering the character's face
+- Text: Korean text "${panel.dialogue}" clearly readable
+- Font: Clean, bold, easy to read
+- Size: Large enough to read on mobile (speech bubble takes 15-25% of panel width)
+
+⚠️ DO NOT SKIP THE SPEECH BUBBLE. IT IS REQUIRED FOR THIS PANEL.`;
+
+    speechBubbleRule = `- MUST render speech bubble with Korean text: "${panel.dialogue}"
+- Speech bubble is MANDATORY, not optional`;
   }
 
   // Build prompt - 시네마틱 연출 강화
@@ -465,7 +488,7 @@ ${dialogueSection}
 - Vertical 9:16 composition
 - Publication-ready quality
 - NO generic AI look - cinematic feel only
-${panel.dialogue ? '- Render speech bubble with Korean text clearly visible' : '- DO NOT render any text or speech bubbles'}`;
+${speechBubbleRule}`;
 
   // Build contents array
   const contents: Array<{ text: string } | { inlineData: { mimeType: string; data: string } }> = [

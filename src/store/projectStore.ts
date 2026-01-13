@@ -87,7 +87,9 @@ const initialProject: WebtoonProject = {
   artStyle: ArtStyle.WEBTOON_STANDARD,
   panels: [],
   characters: [],
-  styleRef: null
+  styleRef: null,
+  mainCharacterSheet: undefined,
+  locationSheet: undefined
 };
 
 const initialWizard: WizardState = {
@@ -341,6 +343,15 @@ export const useProjectStore = create<ProjectState>()(
             ...state.project.styleRef,
             images: [],
           } : null,
+          // 시트 이미지 제외 (base64, ~1MB/개)
+          mainCharacterSheet: state.project.mainCharacterSheet ? {
+            ...state.project.mainCharacterSheet,
+            sheetImageUrl: undefined,
+          } : undefined,
+          locationSheet: state.project.locationSheet ? {
+            ...state.project.locationSheet,
+            sheetImageUrl: undefined,
+          } : undefined,
         },
         ideaInput: state.ideaInput,
         wizard: {

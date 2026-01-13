@@ -18,8 +18,12 @@ export const Header: React.FC = () => {
   };
 
   const handleConfirmReset = () => {
+    // localStorage에서 프로젝트 데이터 완전 삭제
+    localStorage.removeItem('tooncraft-project');
     resetProject();
     setShowResetModal(false);
+    // 페이지 새로고침으로 완전 초기화
+    window.location.reload();
   };
 
   return (

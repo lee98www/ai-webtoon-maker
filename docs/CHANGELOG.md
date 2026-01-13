@@ -6,6 +6,64 @@
 
 ---
 
+## [2026-01-13] 전체 레이아웃 재설계 (Full-Screen Step Flow)
+
+### 문제
+- 기존 3컬럼 레이아웃 (사이드바 + 콘텐츠 + 프리뷰) 구조적 한계
+- 스크롤 동작 불능 (배포 환경)
+- 색상 불일치 (accent-500 등 미정의 색상 사용)
+
+### 변경
+
+**레이아웃 구조 변경**:
+- 3컬럼 레이아웃 → 단일 전체 화면 스텝 플로우
+- `WizardLayout.tsx` 완전 재작성
+  - 새 구조: Header + StepIndicator + Main + StepFooter
+  - `h-screen flex flex-col` 기반 단일 컬럼
+
+**새 레이아웃 컴포넌트 생성**:
+- `src/components/layout/Header.tsx` - 미니멀 헤더 (로고 + API 버튼)
+- `src/components/layout/StepIndicator.tsx` - 가로 스텝 네비게이션
+- `src/components/layout/StepFooter.tsx` - 이전/다음 버튼 + 진행 표시
+
+**스텝별 레이아웃 재설계**:
+- `UnifiedConceptEditor.tsx` - 2컬럼 레이아웃 (스토리 | 설정)
+  - textarea `flex-1` → `h-48` 고정 높이 (스크롤 수정)
+- `BlueprintStep.tsx` - 4x2 그리드 뷰 + 우측 편집 패널
+- `RenderStep.tsx` - 세로 웹툰 프리뷰 + 우측 컨트롤
+
+**색상 체계 통일**:
+- `accent-500` → `emerald-500` (완료 상태)
+- `blue-400` → `slate-400` (생성 중 상태)
+- 전체 색상: **slate** (기본), **emerald** (완료), **red** (에러)
+
+### 관련 파일
+- `src/components/wizard/WizardLayout.tsx`
+- `src/components/layout/Header.tsx` (신규)
+- `src/components/layout/StepIndicator.tsx` (신규)
+- `src/components/layout/StepFooter.tsx` (신규)
+- `src/components/concept/UnifiedConceptEditor.tsx`
+- `src/components/steps/storyboard/BlueprintStep.tsx`
+- `src/components/steps/production/RenderStep.tsx`
+
+### 새 레이아웃 구조
+```
+┌──────────────────────────────────────┐
+│  ToonCraft                    [API]  │  ← Header (h-14)
+├──────────────────────────────────────┤
+│      [1] ──── [2] ──── [3]           │  ← StepIndicator (h-20)
+├──────────────────────────────────────┤
+│                                      │
+│       [ 전체 화면 작업 공간 ]         │  ← main (flex-1)
+│       (스텝별 전용 레이아웃)          │
+│                                      │
+├──────────────────────────────────────┤
+│            [이전]  [다음]             │  ← StepFooter (h-16)
+└──────────────────────────────────────┘
+```
+
+---
+
 ## [2026-01-13] 카메라 앵글 창의적 연출 시스템
 
 ### 문제

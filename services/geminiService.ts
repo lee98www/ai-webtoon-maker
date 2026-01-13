@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI } from '@google/genai';
 import { ArtStyle, Genre, PanelConfig } from "../types";
 import { STYLE_PROMPTS, GENRE_DESCRIPTIONS } from "../constants";
 
@@ -87,12 +87,12 @@ function classifyError(error: unknown): ApiError {
 // AI Client
 // ============================================
 
-function getAiClient(): GoogleGenerativeAI {
+function getAiClient(): GoogleGenAI {
   const apiKey = getApiKey();
   if (!apiKey) {
     throw new ApiError(ErrorCode.API_KEY_MISSING);
   }
-  return new GoogleGenerativeAI(apiKey);
+  return new GoogleGenAI({ apiKey });
 }
 
 // ============================================
@@ -129,9 +129,13 @@ interface StoryboardResponse {
   panels: PanelConfig[];
 }
 
+// 텍스트 모델
+const TEXT_MODEL = 'gemini-2.5-flash';
+// 이미지 생성 모델 (Gemini 3.0)
+const IMAGE_MODEL = 'gemini-3-pro-image-preview';
+
 export const refineSynopsis = async (input: string, genre: Genre): Promise<string> => {
   const ai = getAiClient();
-  const model = ai.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
   const systemPrompt = `당신은 네이버/카카오 웹툰 유료 결제율 1위의 메인 PD입니다.
 사용자의 아이디어를 상업적 베스트셀러의 '로그라인'과 '기승전결'로 재구성하십시오.
@@ -143,9 +147,12 @@ export const refineSynopsis = async (input: string, genre: Genre): Promise<strin
 [장르: ${genre}] 아이디어: "${input}"
 작품의 상업적 가치를 극대화한 시놉시스를 한국어로 작성해.`;
 
-  const result = await model.generateContent(prompt);
-  const response = result.response;
-  const text = response.text();
+  const response = await ai.models.generateContent({
+    model: TEXT_MODEL,
+    contents: prompt
+  });
+
+  const text = response.text;
 
   if (!text) {
     throw new ApiError(ErrorCode.PARSE_ERROR, '시놉시스 생성에 실패했습니다.');
@@ -160,12 +167,6 @@ export const generateStoryboard = async (
   count: number = 8
 ): Promise<StoryboardResponse> => {
   const ai = getAiClient();
-  const model = ai.getGenerativeModel({
-    model: 'gemini-2.0-flash',
-    generationConfig: {
-      responseMimeType: 'application/json'
-    }
-  });
 
   const genreDesc = GENRE_DESCRIPTIONS[genre] || '';
 
@@ -210,13 +211,22 @@ export const generateStoryboard = async (
 - Noir: dutch_angle, low_angle, over_shoulder 선호. 그림자와 대비
 - Politics: low_angle, high_angle 대비. 권력 역학 표현
 
-[8컷 구조]
-1컷 (hook): 독자를 사로잡는 오프닝 - 강렬한 첫인상
-2컷 (setup): 상황/캐릭터 소개 - 맥락 제공
-3-4컷 (development): 전개 - 스토리 진행
-5-6컷 (escalation): 고조 - 긴장감 상승
-7컷 (climax): 감정/액션의 정점 - 이전 컷과 극적 대비 필수
-8컷 (cliffhanger): 다음이 궁금하도록 - 페이지 턴 유도
+[핵심 원칙 - 하이라이트 연출]
+⚠️ 8컷에 전체 이야기를 담지 마라. 기승전결 구조 금지.
+✅ 시놉시스에서 가장 임팩트 있는 **한 순간**을 선택하라.
+✅ 그 순간을 8컷으로 **디테일하게** 펼쳐라.
+
+예시:
+- "복수를 다짐하는 남자" → 복수 전체 스토리 X → 복수를 결심하는 **그 순간**의 표정, 주먹, 눈빛, 회상
+- "첫사랑 고백" → 만남부터 결말 X → 고백 직전 긴장, 말을 꺼내는 순간, 상대 반응의 **디테일**
+
+[8컷 시퀀스 설계]
+- 1-2컷: 순간의 직전 - 긴장감 구축, 상황 암시
+- 3-5컷: 핵심 순간 - 감정/액션의 절정을 여러 앵글로 분해
+- 6-7컷: 반응/여파 - 그 순간 직후의 임팩트
+- 8컷: 여운 또는 반전 - 강렬한 마무리
+
+각 컷은 **같은 순간을 다른 각도로** 보여주거나, **0.5초 단위의 미세한 시간 흐름**을 표현할 수 있다.
 
 [출력 JSON 형식]
 {
@@ -242,9 +252,15 @@ export const generateStoryboard = async (
 
 dialogue와 caption은 빈 문자열 가능. JSON만 출력하세요.`;
 
-  const result = await model.generateContent(prompt);
-  const response = result.response;
-  const text = response.text();
+  const response = await ai.models.generateContent({
+    model: TEXT_MODEL,
+    contents: prompt,
+    config: {
+      responseMimeType: 'application/json'
+    }
+  });
+
+  const text = response.text;
 
   if (!text) {
     throw new ApiError(ErrorCode.PARSE_ERROR, '콘티 생성에 실패했습니다.');
@@ -291,7 +307,6 @@ export const generatePanelImage = async (
   options: GenerationOptions = {}
 ): Promise<string> => {
   const ai = getAiClient();
-  const model = ai.getGenerativeModel({ model: 'gemini-2.0-flash-exp-image-generation' });
 
   const stylePrompt = STYLE_PROMPTS[style] || STYLE_PROMPTS[ArtStyle.WEBTOON_STANDARD];
   const genreDesc = GENRE_DESCRIPTIONS[genre] || '';
@@ -300,11 +315,8 @@ export const generatePanelImage = async (
     previousPanelImage = null,
   } = options;
 
-  // Build prompt parts
-  const parts: Array<{ text: string } | { inlineData: { mimeType: string; data: string } }> = [];
-
-  parts.push({
-    text: `[MASTERPIECE WEBTOON PANEL - PANEL ${panelIndex + 1}]
+  // Build prompt
+  let prompt = `[MASTERPIECE WEBTOON PANEL - PANEL ${panelIndex + 1}]
 
 TARGET: Professional Korean webtoon publication quality
 FORMAT: 9:16 vertical (mobile optimized)
@@ -329,12 +341,16 @@ Focus: ${panel.characterFocus || 'main character'}
 - DO NOT render any text or speech bubbles
 - Maintain character consistency
 - Vertical 9:16 composition
-- Professional webtoon quality`
-  });
+- Professional webtoon quality`;
+
+  // Build contents array
+  const contents: Array<{ text: string } | { inlineData: { mimeType: string; data: string } }> = [
+    { text: prompt }
+  ];
 
   // Add previous panel reference if available
   if (previousPanelImage) {
-    parts.push({
+    contents.push({
       text: '\n[PREVIOUS PANEL - Use for character/style consistency only, create NEW composition]'
     });
 
@@ -342,7 +358,7 @@ Focus: ${panel.characterFocus || 'main character'}
       ? previousPanelImage.split(',')[1]
       : previousPanelImage;
 
-    parts.push({
+    contents.push({
       inlineData: {
         mimeType: 'image/png',
         data: base64Data
@@ -351,13 +367,26 @@ Focus: ${panel.characterFocus || 'main character'}
   }
 
   try {
-    const result = await model.generateContent(parts);
-    const response = result.response;
+    const response = await ai.models.generateContent({
+      model: IMAGE_MODEL,
+      contents: contents,
+      config: {
+        responseModalities: ['TEXT', 'IMAGE']
+      }
+    });
 
     // Find image part in response
-    const imagePart = response.candidates?.[0]?.content?.parts?.find(
-      (part: any) => part.inlineData
-    );
+    const candidates = response.candidates;
+    if (!candidates || candidates.length === 0) {
+      throw new Error('이미지 생성에 실패했습니다.');
+    }
+
+    const parts = candidates[0].content?.parts;
+    if (!parts) {
+      throw new Error('이미지 생성에 실패했습니다.');
+    }
+
+    const imagePart = parts.find((part: any) => part.inlineData);
 
     if (!imagePart?.inlineData?.data) {
       throw new Error('이미지 생성에 실패했습니다.');
@@ -402,7 +431,6 @@ export const generateCharacterSheet = async (
   request: CharacterSheetRequest
 ): Promise<CharacterSheetResponse> => {
   const ai = getAiClient();
-  const model = ai.getGenerativeModel({ model: 'gemini-2.0-flash-exp-image-generation' });
 
   const stylePrompt = request.artStyle
     ? STYLE_PROMPTS[request.artStyle]
@@ -433,28 +461,41 @@ REQUIREMENTS:
 - Consistent proportions`;
 
   try {
-    const result = await model.generateContent(prompt);
-    const response = result.response;
+    const response = await ai.models.generateContent({
+      model: IMAGE_MODEL,
+      contents: prompt,
+      config: {
+        responseModalities: ['TEXT', 'IMAGE']
+      }
+    });
 
-    const imagePart = response.candidates?.[0]?.content?.parts?.find(
-      (part: any) => part.inlineData
-    );
+    const candidates = response.candidates;
+    if (!candidates || candidates.length === 0) {
+      throw new Error('캐릭터 시트 생성에 실패했습니다.');
+    }
+
+    const parts = candidates[0].content?.parts;
+    if (!parts) {
+      throw new Error('캐릭터 시트 생성에 실패했습니다.');
+    }
+
+    const imagePart = parts.find((part: any) => part.inlineData);
 
     if (!imagePart?.inlineData?.data) {
       throw new Error('캐릭터 시트 생성에 실패했습니다.');
     }
 
     // Extract features with text model
-    const textModel = ai.getGenerativeModel({ model: 'gemini-2.0-flash' });
-    const featureResult = await textModel.generateContent(
-      `Based on this character description, extract precise visual features:
+    const featureResponse = await ai.models.generateContent({
+      model: TEXT_MODEL,
+      contents: `Based on this character description, extract precise visual features:
 ${request.description}
 
 Output detailed features in English:
 - Face shape, Eyes, Hair, Nose/lips, Skin tone, Body type, Distinctive marks, Clothing`
-    );
+    });
 
-    const extractedFeatures = featureResult.response.text() || '';
+    const extractedFeatures = featureResponse.text || '';
 
     return {
       imageUrl: `data:image/png;base64,${imagePart.inlineData.data}`,
@@ -470,7 +511,6 @@ export const generateStyleReference = async (
   request: StyleReferenceRequest
 ): Promise<StyleReferenceResponse> => {
   const ai = getAiClient();
-  const model = ai.getGenerativeModel({ model: 'gemini-2.0-flash-exp-image-generation' });
 
   const baseStyle = request.baseStyle
     ? STYLE_PROMPTS[request.baseStyle]
@@ -508,12 +548,25 @@ REQUIREMENTS:
 - Vertical 9:16 format`;
 
   try {
-    const result = await model.generateContent(prompt);
-    const response = result.response;
+    const response = await ai.models.generateContent({
+      model: IMAGE_MODEL,
+      contents: prompt,
+      config: {
+        responseModalities: ['TEXT', 'IMAGE']
+      }
+    });
 
-    const imagePart = response.candidates?.[0]?.content?.parts?.find(
-      (part: any) => part.inlineData
-    );
+    const candidates = response.candidates;
+    if (!candidates || candidates.length === 0) {
+      throw new Error('스타일 레퍼런스 생성에 실패했습니다.');
+    }
+
+    const parts = candidates[0].content?.parts;
+    if (!parts) {
+      throw new Error('스타일 레퍼런스 생성에 실패했습니다.');
+    }
+
+    const imagePart = parts.find((part: any) => part.inlineData);
 
     if (!imagePart?.inlineData?.data) {
       throw new Error('스타일 레퍼런스 생성에 실패했습니다.');

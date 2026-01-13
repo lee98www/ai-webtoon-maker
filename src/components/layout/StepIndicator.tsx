@@ -30,7 +30,7 @@ export const StepIndicator: React.FC = () => {
                 <div className={`
                   w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium transition-all
                   ${isComplete
-                    ? 'bg-accent-500 text-white'
+                    ? 'bg-emerald-500 text-white'
                     : isActive
                       ? 'bg-slate-900 text-white'
                       : 'bg-slate-200 text-slate-500'
@@ -59,7 +59,7 @@ export const StepIndicator: React.FC = () => {
                 <div className={`
                   w-16 h-0.5 mx-1
                   ${index < WIZARD_STEPS.findIndex(s => s.id === wizard.currentStepId)
-                    ? 'bg-accent-500'
+                    ? 'bg-emerald-500'
                     : 'bg-slate-200'
                   }
                 `} />

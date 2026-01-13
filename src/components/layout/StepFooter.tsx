@@ -60,7 +60,7 @@ export const StepFooter: React.FC = () => {
                 ${index === currentIndex
                   ? 'w-6 bg-slate-900'
                   : wizard.completedSteps.has(step.id)
-                    ? 'bg-accent-500'
+                    ? 'bg-emerald-500'
                     : 'bg-slate-300'
                 }
               `}

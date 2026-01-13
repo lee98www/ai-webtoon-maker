@@ -28,7 +28,7 @@ const StoryPanel: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col bg-white p-8">
+    <div className="bg-white p-8">
       {/* Section Header */}
       <div className="mb-6">
         <h2 className="text-lg font-semibold text-slate-900">스토리 아이디어</h2>
@@ -36,12 +36,12 @@ const StoryPanel: React.FC = () => {
       </div>
 
       {/* Main Input */}
-      <div className="flex-1 flex flex-col">
+      <div>
         <textarea
           value={ideaInput}
           onChange={(e) => setIdeaInput(e.target.value)}
           placeholder="예: 현대 판타지 세계관. 주인공은 소멸 직전의 헌터 길드장인데, 갑자기 10년 전 신입 헌터 시절로 회귀한다. 그는 미래의 기억을 바탕으로 다가올 대재앙을 막고자 하는데..."
-          className="flex-1 w-full p-5 text-base leading-relaxed border border-slate-200 rounded-xl resize-none focus:border-slate-400 focus:ring-0 placeholder:text-slate-400 transition-colors"
+          className="w-full h-48 p-5 text-base leading-relaxed border border-slate-200 rounded-xl resize-none focus:border-slate-400 focus:ring-0 placeholder:text-slate-400 transition-colors"
         />
 
         {/* Action Bar */}

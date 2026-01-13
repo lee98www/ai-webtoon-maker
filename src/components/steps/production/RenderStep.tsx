@@ -64,7 +64,7 @@ export const RenderStep: React.FC = () => {
                     {/* Panel Image */}
                     <div className={`
                       aspect-[3/4] bg-white rounded-lg overflow-hidden shadow-sm transition-all
-                      ${isCurrentlyGenerating ? 'ring-2 ring-blue-400 ring-offset-2' : ''}
+                      ${isCurrentlyGenerating ? 'ring-2 ring-slate-400 ring-offset-2' : ''}
                       ${isFailed ? 'ring-2 ring-red-400' : ''}
                     `}>
                       {isCurrentlyGenerating ? (

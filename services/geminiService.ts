@@ -167,6 +167,55 @@ export interface GenerationOptions {
   includeDialogue?: boolean;
 }
 
+// ============================================
+// AI Generation API Functions
+// ============================================
+
+export interface CharacterSheetRequest {
+  name: string;
+  description: string;
+  artStyle?: ArtStyle;
+  gender?: 'male' | 'female' | 'unspecified';
+}
+
+export interface CharacterSheetResponse {
+  imageUrl: string;
+  extractedFeatures: string;
+  name: string;
+}
+
+export interface StyleReferenceRequest {
+  keywords: string[];
+  baseStyle?: ArtStyle;
+  sampleScene?: string;
+}
+
+export interface StyleReferenceResponse {
+  imageUrl: string;
+  extractedStyle: string;
+  keywords: string[];
+}
+
+// AI 캐릭터 시트 생성
+export const generateCharacterSheet = async (
+  request: CharacterSheetRequest
+): Promise<CharacterSheetResponse> => {
+  return apiRequest<CharacterSheetResponse>('/generate-character-sheet', {
+    body: request,
+    timeout: 180000
+  });
+};
+
+// AI 스타일 레퍼런스 생성
+export const generateStyleReference = async (
+  request: StyleReferenceRequest
+): Promise<StyleReferenceResponse> => {
+  return apiRequest<StyleReferenceResponse>('/generate-style-reference', {
+    body: request,
+    timeout: 180000
+  });
+};
+
 export const generatePanelImage = async (
   panel: PanelConfig,
   style: ArtStyle,
@@ -179,7 +228,7 @@ export const generatePanelImage = async (
     characterRefs = [],
     styleRef = null,
     previousPanelImage = null,
-    includeDialogue = true
+    includeDialogue = false  // 기본값 false - 말풍선은 프론트엔드 오버레이로 처리
   } = options;
 
   const result = await apiRequest<{ imageUrl: string }>('/generate-panel', {

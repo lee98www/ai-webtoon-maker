@@ -3,20 +3,24 @@ import { useProjectStore } from '../../store/projectStore';
 import { WIZARD_STEPS, WizardStepId } from '../../../types';
 
 // Step components
+import { UnifiedConceptEditor } from '../concept/UnifiedConceptEditor';
+import { BlueprintStep } from '../steps/storyboard/BlueprintStep';
+import { RenderStep } from '../steps/production/RenderStep';
+
+// Legacy imports (for backwards compatibility if needed)
 import { IdeaStep } from '../steps/concept/IdeaStep';
 import { GenreStep } from '../steps/concept/GenreStep';
 import { StyleStep } from '../steps/concept/StyleStep';
 import { CharacterStep } from '../steps/concept/CharacterStep';
 import { StyleRefStep } from '../steps/concept/StyleRefStep';
-import { BlueprintStep } from '../steps/storyboard/BlueprintStep';
-import { RenderStep } from '../steps/production/RenderStep';
 
 const STEP_COMPONENTS: Record<WizardStepId, React.FC> = {
-  idea: IdeaStep,
-  genre: GenreStep,
-  style: StyleStep,
-  characters: CharacterStep,
-  styleRef: StyleRefStep,
+  concept: UnifiedConceptEditor,  // 새로운 통합 기획 화면
+  idea: IdeaStep,         // legacy
+  genre: GenreStep,       // legacy
+  style: StyleStep,       // legacy
+  characters: CharacterStep, // legacy
+  styleRef: StyleRefStep, // legacy
   blueprint: BlueprintStep,
   render: RenderStep,
 };

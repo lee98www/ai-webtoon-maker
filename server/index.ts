@@ -4,6 +4,8 @@ import cors from 'cors';
 import { GoogleGenAI, Type } from '@google/genai';
 import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
+import { buildStylePrompt, ADVANCED_STYLE_PROMPTS, ArtStyle as StyleEnum } from './prompts/stylePrompts';
+import { buildGenrePrompt, GENRE_DIRECTING, Genre as GenreEnum } from './prompts/genreDirecting';
 
 // ============================================
 // Types
@@ -347,7 +349,7 @@ app.post('/api/generate-panel', async (req: Request, res: Response, next: NextFu
       characterRefs = [],
       styleRef = null,
       previousPanelImage = null,
-      includeDialogue = true
+      includeDialogue = false  // 기본값 false - 말풍선은 프론트엔드 오버레이로 처리
     } = req.body;
 
     if (!panel || !panel.description) {
@@ -361,12 +363,20 @@ app.post('/api/generate-panel', async (req: Request, res: Response, next: NextFu
     // Build multimodal content parts
     const parts: Array<{ text: string } | { inlineData: { mimeType: string; data: string } }> = [];
 
-    // 1. Style instruction
+    // 1. Master header with professional style and genre directing
+    const stylePrompt = buildStylePrompt(style as StyleEnum);
+    const genrePrompt = buildGenrePrompt(genre as GenreEnum);
+
     parts.push({
       text: `[MASTERPIECE WEBTOON PANEL - PANEL ${panelIndex + 1}]
 
-STYLE: ${STYLE_PROMPTS[style as ArtStyle] || STYLE_PROMPTS[ArtStyle.WEBTOON_STANDARD]}
-ATMOSPHERE: ${GENRE_DESCRIPTIONS[genre as Genre] || GENRE_DESCRIPTIONS[Genre.ACTION]}`
+TARGET: Professional Korean webtoon publication quality
+FORMAT: 9:16 vertical (mobile short-form optimized)
+RESOLUTION: 2K minimum
+
+${stylePrompt}
+
+${genrePrompt}`
     });
 
     // 2. Style reference image (if provided)
@@ -398,7 +408,25 @@ ATMOSPHERE: ${GENRE_DESCRIPTIONS[genre as Genre] || GENRE_DESCRIPTIONS[Genre.ACT
 
     // 4. Previous panel for consistency (if provided)
     if (previousPanelImage) {
-      parts.push({ text: '\n[PREVIOUS PANEL - This is the previous scene. Maintain character and background consistency]' });
+      parts.push({
+        text: `\n[PREVIOUS PANEL REFERENCE]
+This is the PREVIOUS scene for REFERENCE ONLY.
+
+USE THIS FOR:
+- Character appearance consistency (face, hair, clothing MUST match)
+- Location/setting continuity (if same location)
+- Color palette and lighting mood
+
+DO NOT:
+- Copy the composition or layout
+- Use the same camera angle
+- Replicate the pose or position
+- Duplicate the background arrangement
+
+IMPORTANT: Create a COMPLETELY NEW and DISTINCT composition.
+This panel should show the NEXT moment in the story progression.
+The scene must advance - different angle, different pose, different framing.`
+      });
       parts.push({
         inlineData: {
           mimeType: 'image/png',
@@ -454,10 +482,11 @@ SPEECH BUBBLE RULES:
     parts.push({
       text: `\n[ABSOLUTE RULES]
 - Cinematic lighting, high-end illustration quality
-- ${!includeDialogue ? 'DO NOT render any text, letters, numbers, or speech bubbles' : 'Include speech bubbles with the specified text'}
+- ${!includeDialogue ? 'DO NOT render any text, letters, numbers, speech bubbles, or captions in the image. Leave clean space for text overlay.' : 'Include speech bubbles with the specified text'}
 - Maintain perfect facial and clothing consistency
-- Vertical composition (3:4 aspect ratio)
-- Professional webtoon quality output`
+- Vertical composition optimized for mobile short-form content (9:16 aspect ratio)
+- Professional webtoon quality output
+- Each panel must have a UNIQUE composition - never copy previous panel layout`
     });
 
     const response = await withTimeout(
@@ -465,7 +494,7 @@ SPEECH BUBBLE RULES:
         model: 'gemini-3-pro-image-preview',
         contents: { parts },
         config: {
-          imageConfig: { aspectRatio: '3:4', imageSize: '2K' }
+          imageConfig: { aspectRatio: '9:16', imageSize: '2K' }  // 숏폼 최적화 비율
         }
       }),
       180000, // 3 minute timeout for complex image generation
@@ -481,6 +510,193 @@ SPEECH BUBBLE RULES:
     }
 
     res.json({ imageUrl: `data:image/png;base64,${imageData}` });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Generate Character Sheet (AI 캐릭터 시트 생성)
+app.post('/api/generate-character-sheet', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const {
+      name,
+      description,
+      artStyle = ArtStyle.WEBTOON_STANDARD,
+      gender = 'unspecified'
+    } = req.body;
+
+    if (!description || typeof description !== 'string' || description.trim().length < 5) {
+      const error: ApiError = new Error('캐릭터 설명을 5자 이상 입력해주세요.');
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const ai = getAiClient();
+
+    const prompt = `[CHARACTER REFERENCE SHEET GENERATION]
+
+Create a professional character reference sheet for webtoon/animation production.
+
+CHARACTER SPECIFICATIONS:
+- Name: ${name || 'Unnamed Character'}
+- Description: ${description}
+- Gender: ${gender}
+
+GENERATE A SINGLE IMAGE containing:
+1. FRONT VIEW (3/4 body, neutral standing pose) - LEFT SIDE
+2. FACE CLOSE-UP (showing detailed facial features) - CENTER TOP
+3. 3/4 ANGLE VIEW (upper body, slight turn) - CENTER BOTTOM
+4. EXPRESSION VARIATIONS (3 small faces: smile, angry, surprised) - RIGHT SIDE
+
+STYLE: ${STYLE_PROMPTS[artStyle as ArtStyle] || STYLE_PROMPTS[ArtStyle.WEBTOON_STANDARD]}
+
+CRITICAL REQUIREMENTS:
+- All views must show the EXACT SAME character with consistent features
+- Clean white/light gray background
+- Professional turnaround sheet layout
+- NO text labels on the image
+- High detail on face, hair, and clothing
+- Consistent proportions across all views
+- This reference sheet will be used for consistency in webtoon production`;
+
+    const response = await withTimeout(
+      ai.models.generateContent({
+        model: 'gemini-3-pro-image-preview',
+        contents: prompt,
+        config: {
+          imageConfig: { aspectRatio: '1:1', imageSize: '2K' }
+        }
+      }),
+      180000,
+      '캐릭터 시트 생성'
+    );
+
+    const imageData = response.candidates?.[0]?.content?.parts.find(
+      (p: any) => p.inlineData
+    )?.inlineData?.data;
+
+    if (!imageData) {
+      throw new Error('캐릭터 시트 생성에 실패했습니다. 다시 시도해주세요.');
+    }
+
+    // AI로 캐릭터 특징 추출
+    const featureResponse = await withTimeout(
+      ai.models.generateContent({
+        model: 'gemini-3-pro-preview',
+        contents: [
+          { text: `Based on this character description, extract precise visual features for consistency in webtoon production.
+
+Character Description: ${description}
+
+Output a detailed feature list in English:
+- Face shape:
+- Eyes (shape, color, distinctive features):
+- Hair (style, length, color, bangs):
+- Nose and lips:
+- Skin tone:
+- Body type:
+- Distinctive marks (scars, moles, accessories):
+- Clothing description:
+
+Be EXTREMELY specific and detailed. These features must be reproducible across multiple panels.` }
+        ],
+        config: { temperature: 0.3 }
+      }),
+      30000,
+      '특징 추출'
+    );
+
+    const extractedFeatures = featureResponse.text?.trim() || '';
+
+    res.json({
+      imageUrl: `data:image/png;base64,${imageData}`,
+      extractedFeatures,
+      name: name || 'Unnamed Character'
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Generate Style Reference (AI 스타일 레퍼런스 생성)
+app.post('/api/generate-style-reference', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const {
+      keywords = [],
+      baseStyle = ArtStyle.WEBTOON_STANDARD,
+      sampleScene = '도시 배경의 캐릭터'
+    } = req.body;
+
+    if (!keywords || keywords.length === 0) {
+      const error: ApiError = new Error('스타일 키워드를 1개 이상 선택해주세요.');
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const ai = getAiClient();
+
+    // 키워드를 영어로 매핑
+    const keywordMap: Record<string, string> = {
+      '선명한 선화': 'crisp clean line art with bold outlines',
+      '수채화 느낌': 'watercolor texture with soft color bleeding',
+      '그라데이션': 'smooth gradient shading and color transitions',
+      '플랫 컬러': 'flat solid colors with minimal shading',
+      '강한 명암': 'high contrast dramatic lighting and shadows',
+      '파스텔 톤': 'soft pastel color palette',
+      '네온 컬러': 'vibrant neon colors with glow effects',
+      '빈티지': 'vintage retro aesthetic with muted tones',
+      '미니멀': 'minimalist clean design with simple shapes',
+      '디테일함': 'highly detailed intricate artwork'
+    };
+
+    const englishKeywords = keywords.map((k: string) => keywordMap[k] || k).join(', ');
+
+    const prompt = `[STYLE REFERENCE SAMPLE GENERATION]
+
+Create a style reference image for webtoon production.
+
+BASE STYLE: ${STYLE_PROMPTS[baseStyle as ArtStyle] || STYLE_PROMPTS[ArtStyle.WEBTOON_STANDARD]}
+
+ADDITIONAL STYLE ATTRIBUTES:
+${englishKeywords}
+
+SCENE TO ILLUSTRATE: ${sampleScene}
+
+REQUIREMENTS:
+- This image will serve as a STYLE REFERENCE for consistent art production
+- Demonstrate the specific visual style clearly
+- Focus on: line quality, color palette, shading technique, texture
+- Professional webtoon illustration quality
+- Vertical format optimized for mobile (9:16)`;
+
+    const response = await withTimeout(
+      ai.models.generateContent({
+        model: 'gemini-3-pro-image-preview',
+        contents: prompt,
+        config: {
+          imageConfig: { aspectRatio: '9:16', imageSize: '2K' }
+        }
+      }),
+      180000,
+      '스타일 레퍼런스 생성'
+    );
+
+    const imageData = response.candidates?.[0]?.content?.parts.find(
+      (p: any) => p.inlineData
+    )?.inlineData?.data;
+
+    if (!imageData) {
+      throw new Error('스타일 레퍼런스 생성에 실패했습니다. 다시 시도해주세요.');
+    }
+
+    // 스타일 설명 생성
+    const extractedStyle = `Style: ${baseStyle}\nKeywords: ${keywords.join(', ')}\nScene: ${sampleScene}`;
+
+    res.json({
+      imageUrl: `data:image/png;base64,${imageData}`,
+      extractedStyle,
+      keywords
+    });
   } catch (err) {
     next(err);
   }

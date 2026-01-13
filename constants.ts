@@ -38,6 +38,15 @@ export const STYLE_LABELS: Record<ArtStyle, string> = {
   [ArtStyle.SKETCH]: "러프 스케치"
 };
 
+export const STYLE_DESCRIPTIONS: Record<ArtStyle, string> = {
+  [ArtStyle.REALISTIC]: "영화같은 실사 퀄리티, 8K 해상도, 시네마틱 조명",
+  [ArtStyle.ANIME]: "셀 셰이딩, 신카이 마코토 스타일, 선명한 컬러",
+  [ArtStyle.CLAY]: "클레이메이션, 스톱모션 느낌, 부드러운 질감",
+  [ArtStyle.MINHWA]: "한국 전통 민화, 동양화 붓터치, 한지 질감",
+  [ArtStyle.WEBTOON_STANDARD]: "프리미엄 웹툰 스타일, 깔끔한 선화, 디지털 컬러링",
+  [ArtStyle.SKETCH]: "거친 연필 스케치, 흑백, 스토리보드 느낌"
+};
+
 export const DEFAULT_PANEL_COUNT = 8; // Increased for better storytelling density
 
 // Static preview image URLs (generated once via scripts/generate-presets.ts)

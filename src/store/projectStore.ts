@@ -91,10 +91,10 @@ const initialProject: WebtoonProject = {
 };
 
 const initialWizard: WizardState = {
-  currentStepId: 'idea',
+  currentStepId: 'concept',  // 새로운 통합 기획 화면부터 시작
   completedSteps: new Set(),
   skippedSteps: new Set(),
-  visitedSteps: new Set(['idea'])
+  visitedSteps: new Set(['concept'])
 };
 
 export const useProjectStore = create<ProjectState>()(
@@ -291,6 +291,13 @@ export const useProjectStore = create<ProjectState>()(
     const { project, ideaInput } = state;
 
     switch (stepId) {
+      // 새로운 통합 기획 단계
+      case 'concept':
+        const hasIdea = ideaInput.trim().length > 0 || project.synopsis.trim().length > 0;
+        const hasGenre = project.genre !== null;
+        const hasStyle = project.artStyle !== null;
+        return hasIdea && hasGenre && hasStyle;
+      // Legacy steps (하위 호환성)
       case 'idea':
         return ideaInput.trim().length > 0 || project.synopsis.trim().length > 0;
       case 'genre':
@@ -301,6 +308,7 @@ export const useProjectStore = create<ProjectState>()(
         return true; // Optional
       case 'styleRef':
         return true; // Optional
+      // 후반 단계들
       case 'blueprint':
         return project.panels.length > 0;
       case 'render':

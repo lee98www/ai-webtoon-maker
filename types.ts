@@ -96,11 +96,12 @@ export interface ProgressInfo {
 
 // Wizard Step System
 export type WizardStepId =
-  | 'idea'
-  | 'genre'
-  | 'style'
-  | 'characters'
-  | 'styleRef'
+  | 'concept'    // 통합 기획 화면 (idea + genre + style + characters + styleRef)
+  | 'idea'       // legacy
+  | 'genre'      // legacy
+  | 'style'      // legacy
+  | 'characters' // legacy
+  | 'styleRef'   // legacy
   | 'blueprint'
   | 'render';
 
@@ -123,15 +124,15 @@ export interface WizardState {
   visitedSteps: Set<WizardStepId>;
 }
 
+// 간소화된 3단계 wizard (기존 5단계 → 통합 1화면 + 2단계)
 export const WIZARD_STEPS: WizardStepConfig[] = [
-  { id: 'idea', phase: 'concept', label: 'Story Idea', labelKo: '스토리 아이디어', icon: '01', required: true, order: 1 },
-  { id: 'genre', phase: 'concept', label: 'Genre', labelKo: '장르 선택', icon: '02', required: true, order: 2 },
-  { id: 'style', phase: 'concept', label: 'Art Style', labelKo: '아트 스타일', icon: '03', required: true, order: 3 },
-  { id: 'characters', phase: 'concept', label: 'Characters', labelKo: '캐릭터 설정', icon: '04', required: false, order: 4 },
-  { id: 'styleRef', phase: 'concept', label: 'Style Reference', labelKo: '스타일 레퍼런스', icon: '05', required: false, order: 5 },
-  { id: 'blueprint', phase: 'storyboard', label: 'Panel Blueprint', labelKo: '패널 콘티', icon: '06', required: true, order: 6 },
-  { id: 'render', phase: 'production', label: 'Render', labelKo: '이미지 생성', icon: '07', required: true, order: 7 },
+  { id: 'concept', phase: 'concept', label: 'Concept', labelKo: '웹툰 기획', icon: '01', required: true, order: 1 },
+  { id: 'blueprint', phase: 'storyboard', label: 'Panel Blueprint', labelKo: '패널 콘티', icon: '02', required: true, order: 2 },
+  { id: 'render', phase: 'production', label: 'Render', labelKo: '이미지 생성', icon: '03', required: true, order: 3 },
 ];
+
+// 기존 단계 ID도 유지 (하위 호환성)
+export const LEGACY_CONCEPT_STEPS: WizardStepId[] = ['idea', 'genre', 'style', 'characters', 'styleRef'];
 
 export const PHASE_LABELS: Record<WizardPhase, { label: string; labelKo: string }> = {
   concept: { label: 'Concept', labelKo: '기획' },

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useProjectStore } from '../../../store/projectStore';
-import { generateStoryboard } from '../../../../services/geminiService';
+import { generateStoryboard, generateCharacterSheet, generateLocationSheet } from '../../../../services/geminiService';
 import { PanelConfig } from '../../../../types';
 
 export const BlueprintStep: React.FC = () => {
@@ -17,37 +17,104 @@ export const BlueprintStep: React.FC = () => {
 
   const [selectedPanelIndex, setSelectedPanelIndex] = useState<number | null>(null);
 
+  const [sheetGenerationStatus, setSheetGenerationStatus] = useState<string>('');
+
   const handleGenerateStoryboard = async () => {
     if (!project.synopsis && !ideaInput) return;
     setProcessing(true);
+    setSheetGenerationStatus('콘티 생성 중...');
+
     try {
+      // 1단계: 콘티 생성
       const res = await generateStoryboard(project.synopsis || ideaInput, project.genre);
 
-      // 캐릭터/장소 정보 저장
+      // 캐릭터/장소 텍스트 정보 먼저 저장
+      const mainCharacterSheet = res.mainCharacter ? {
+        name: res.mainCharacter.name,
+        appearance: res.mainCharacter.appearance,
+        clothing: res.mainCharacter.clothing,
+        distinctiveFeatures: res.mainCharacter.distinctiveFeatures,
+        sheetImageUrl: undefined as string | undefined
+      } : undefined;
+
+      const locationSheet = res.location ? {
+        name: res.location.name,
+        description: res.location.description,
+        lighting: res.location.lighting,
+        atmosphere: res.location.atmosphere,
+        timeOfDay: res.location.timeOfDay || 'day',
+        sheetImageUrl: undefined as string | undefined
+      } : undefined;
+
+      // 콘티 먼저 저장 (UI 업데이트)
       setProject({
         ...res,
         synopsis: project.synopsis || ideaInput,
-        // 시트 정보 저장 (이미지는 아직 생성 전)
-        mainCharacterSheet: res.mainCharacter ? {
-          name: res.mainCharacter.name,
-          appearance: res.mainCharacter.appearance,
-          clothing: res.mainCharacter.clothing,
-          distinctiveFeatures: res.mainCharacter.distinctiveFeatures,
-          sheetImageUrl: undefined // 나중에 생성
-        } : undefined,
-        locationSheet: res.location ? {
-          name: res.location.name,
-          description: res.location.description,
-          lighting: res.location.lighting,
-          atmosphere: res.location.atmosphere,
-          timeOfDay: res.location.timeOfDay || 'day',
-          sheetImageUrl: undefined // 나중에 생성
-        } : undefined
+        mainCharacterSheet,
+        locationSheet
       });
+
+      // 2단계: 캐릭터 시트 이미지 생성 (병렬)
+      setSheetGenerationStatus('캐릭터/장소 시트 생성 중...');
+
+      const sheetPromises: Promise<void>[] = [];
+
+      // 캐릭터 시트 생성
+      if (res.mainCharacter && res.mainCharacter.appearance) {
+        sheetPromises.push(
+          generateCharacterSheet({
+            name: res.mainCharacter.name,
+            description: `${res.mainCharacter.appearance}. Clothing: ${res.mainCharacter.clothing}. Features: ${res.mainCharacter.distinctiveFeatures}`,
+            artStyle: project.artStyle,
+            genre: project.genre
+          }).then((charResult) => {
+            setProject((prev) => ({
+              ...prev,
+              mainCharacterSheet: prev.mainCharacterSheet ? {
+                ...prev.mainCharacterSheet,
+                sheetImageUrl: charResult.imageUrl
+              } : undefined
+            }));
+          }).catch((err) => {
+            console.error('캐릭터 시트 생성 실패:', err);
+          })
+        );
+      }
+
+      // 장소 시트 생성
+      if (res.location && res.location.description) {
+        sheetPromises.push(
+          generateLocationSheet({
+            name: res.location.name,
+            description: res.location.description,
+            lighting: res.location.lighting,
+            atmosphere: res.location.atmosphere,
+            timeOfDay: res.location.timeOfDay || 'day',
+            artStyle: project.artStyle,
+            genre: project.genre
+          }).then((locResult) => {
+            setProject((prev) => ({
+              ...prev,
+              locationSheet: prev.locationSheet ? {
+                ...prev.locationSheet,
+                sheetImageUrl: locResult.imageUrl
+              } : undefined
+            }));
+          }).catch((err) => {
+            console.error('장소 시트 생성 실패:', err);
+          })
+        );
+      }
+
+      // 시트 생성 완료 대기 (실패해도 계속 진행)
+      await Promise.allSettled(sheetPromises);
+
+      setSheetGenerationStatus('');
       markStepComplete('blueprint');
     } catch (e) {
       const message = e instanceof Error ? e.message : '콘티 생성 실패';
       setError({ message, type: 'error' });
+      setSheetGenerationStatus('');
     } finally {
       setProcessing(false);
     }
@@ -94,7 +161,7 @@ export const BlueprintStep: React.FC = () => {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                     </svg>
-                    <span>스토리보드 생성 중...</span>
+                    <span>{sheetGenerationStatus || '처리 중...'}</span>
                   </>
                 ) : (
                   <>

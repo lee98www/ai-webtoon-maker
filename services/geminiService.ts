@@ -320,23 +320,32 @@ JSON만 출력.`;
       isGenerating: false
     }));
 
+    // mainCharacter 유효성 보장 - 항상 시트 생성이 가능하도록
+    const mainCharacter: CharacterSheetInfo = {
+      name: parsed.mainCharacter?.name || 'Main Character',
+      appearance: parsed.mainCharacter?.appearance || parsed.characterVisuals || 'Character appearance',
+      clothing: parsed.mainCharacter?.clothing || '',
+      distinctiveFeatures: parsed.mainCharacter?.distinctiveFeatures || ''
+    };
+
+    // location 유효성 보장 - 항상 시트 생성이 가능하도록
+    const location: LocationSheetInfo = {
+      name: parsed.location?.name || 'Scene Location',
+      description: parsed.location?.description || 'Scene environment',
+      lighting: parsed.location?.lighting || 'natural',
+      atmosphere: parsed.location?.atmosphere || 'neutral',
+      timeOfDay: parsed.location?.timeOfDay || 'day'
+    };
+
+    console.log('Storyboard parsed - mainCharacter:', mainCharacter);
+    console.log('Storyboard parsed - location:', location);
+
     return {
       title: parsed.title,
       characterVisuals: parsed.characterVisuals,
       highlightMoment: parsed.highlightMoment || '',
-      mainCharacter: parsed.mainCharacter || {
-        name: '',
-        appearance: parsed.characterVisuals || '',
-        clothing: '',
-        distinctiveFeatures: ''
-      },
-      location: parsed.location || {
-        name: '',
-        description: '',
-        lighting: '',
-        atmosphere: '',
-        timeOfDay: ''
-      },
+      mainCharacter,
+      location,
       panels
     };
   } catch (err) {

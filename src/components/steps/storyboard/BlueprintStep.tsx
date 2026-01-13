@@ -54,26 +54,34 @@ export const BlueprintStep: React.FC = () => {
         locationSheet
       });
 
-      // 2단계: 캐릭터 시트 이미지 생성 (병렬)
-      setSheetGenerationStatus('캐릭터/장소 시트 생성 중...');
+      // 2단계: 캐릭터 시트 및 장소 시트 이미지 생성 (병렬)
+      setSheetGenerationStatus('캐릭터/장소 시트 이미지 생성 중...');
 
       const sheetPromises: Promise<void>[] = [];
 
-      // 캐릭터 시트 생성
-      if (res.mainCharacter && res.mainCharacter.appearance) {
+      // 캐릭터 시트 이미지 생성 - mainCharacterSheet가 설정되었으면 반드시 생성
+      if (mainCharacterSheet) {
+        console.log('캐릭터 시트 생성 시작:', mainCharacterSheet);
+        const charDescription = [
+          mainCharacterSheet.appearance,
+          mainCharacterSheet.clothing ? `Clothing: ${mainCharacterSheet.clothing}` : '',
+          mainCharacterSheet.distinctiveFeatures ? `Features: ${mainCharacterSheet.distinctiveFeatures}` : ''
+        ].filter(Boolean).join('. ');
+
         sheetPromises.push(
           generateCharacterSheet({
-            name: res.mainCharacter.name,
-            description: `${res.mainCharacter.appearance}. Clothing: ${res.mainCharacter.clothing}. Features: ${res.mainCharacter.distinctiveFeatures}`,
+            name: mainCharacterSheet.name || 'Character',
+            description: charDescription || res.characterVisuals || 'Main character',
             artStyle: project.artStyle,
             genre: project.genre
           }).then((charResult) => {
+            console.log('캐릭터 시트 생성 완료:', charResult.imageUrl.substring(0, 50) + '...');
             setProject((prev) => ({
               ...prev,
-              mainCharacterSheet: prev.mainCharacterSheet ? {
-                ...prev.mainCharacterSheet,
+              mainCharacterSheet: {
+                ...mainCharacterSheet,
                 sheetImageUrl: charResult.imageUrl
-              } : undefined
+              }
             }));
           }).catch((err) => {
             console.error('캐릭터 시트 생성 실패:', err);
@@ -81,24 +89,26 @@ export const BlueprintStep: React.FC = () => {
         );
       }
 
-      // 장소 시트 생성
-      if (res.location && res.location.description) {
+      // 장소 시트 이미지 생성 - locationSheet가 설정되었으면 반드시 생성
+      if (locationSheet) {
+        console.log('장소 시트 생성 시작:', locationSheet);
         sheetPromises.push(
           generateLocationSheet({
-            name: res.location.name,
-            description: res.location.description,
-            lighting: res.location.lighting,
-            atmosphere: res.location.atmosphere,
-            timeOfDay: res.location.timeOfDay || 'day',
+            name: locationSheet.name || 'Location',
+            description: locationSheet.description || 'Scene location',
+            lighting: locationSheet.lighting || 'natural',
+            atmosphere: locationSheet.atmosphere || 'neutral',
+            timeOfDay: locationSheet.timeOfDay || 'day',
             artStyle: project.artStyle,
             genre: project.genre
           }).then((locResult) => {
+            console.log('장소 시트 생성 완료:', locResult.imageUrl.substring(0, 50) + '...');
             setProject((prev) => ({
               ...prev,
-              locationSheet: prev.locationSheet ? {
-                ...prev.locationSheet,
+              locationSheet: {
+                ...locationSheet,
                 sheetImageUrl: locResult.imageUrl
-              } : undefined
+              }
             }));
           }).catch((err) => {
             console.error('장소 시트 생성 실패:', err);
@@ -107,7 +117,11 @@ export const BlueprintStep: React.FC = () => {
       }
 
       // 시트 생성 완료 대기 (실패해도 계속 진행)
-      await Promise.allSettled(sheetPromises);
+      if (sheetPromises.length > 0) {
+        console.log(`${sheetPromises.length}개의 시트 이미지 생성 대기 중...`);
+        await Promise.allSettled(sheetPromises);
+        console.log('시트 이미지 생성 완료');
+      }
 
       setSheetGenerationStatus('');
       markStepComplete('blueprint');

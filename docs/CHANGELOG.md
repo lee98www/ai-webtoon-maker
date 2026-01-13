@@ -6,6 +6,29 @@
 
 ---
 
+## [2026-01-13] 캐릭터/장소 시트 이미지 자동 생성 버그 수정
+
+### 문제
+- 콘티 생성 시 캐릭터/장소 시트 텍스트 정보는 추출되지만 **이미지가 생성되지 않음**
+- 조건문 `res.mainCharacter.appearance` 체크가 빈 문자열일 때 실패
+
+### 수정
+
+**`BlueprintStep.tsx`**:
+- 조건문 변경: `res.mainCharacter.appearance` → `mainCharacterSheet` 객체 존재 여부로 변경
+- fallback 처리 강화: description이 비어도 `characterVisuals` 사용
+- 디버그 로그 추가: 시트 생성 시작/완료 상태 콘솔 출력
+
+**`services/geminiService.ts`**:
+- `generateStoryboard` 반환값 개선: `mainCharacter`와 `location`이 항상 유효한 기본값을 갖도록 처리
+- 파싱된 데이터가 없어도 기본값으로 시트 생성 가능
+
+### 관련 파일
+- `src/components/steps/storyboard/BlueprintStep.tsx` (라인 57-124)
+- `services/geminiService.ts` (라인 323-350)
+
+---
+
 ## [2026-01-13] 캐릭터/장소 시트 자동 생성 + 말풍선 렌더링 + 일관성 강화
 
 ### 문제

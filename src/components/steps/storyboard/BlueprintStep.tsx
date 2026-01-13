@@ -22,9 +22,27 @@ export const BlueprintStep: React.FC = () => {
     setProcessing(true);
     try {
       const res = await generateStoryboard(project.synopsis || ideaInput, project.genre);
+
+      // 캐릭터/장소 정보 저장
       setProject({
         ...res,
-        synopsis: project.synopsis || ideaInput
+        synopsis: project.synopsis || ideaInput,
+        // 시트 정보 저장 (이미지는 아직 생성 전)
+        mainCharacterSheet: res.mainCharacter ? {
+          name: res.mainCharacter.name,
+          appearance: res.mainCharacter.appearance,
+          clothing: res.mainCharacter.clothing,
+          distinctiveFeatures: res.mainCharacter.distinctiveFeatures,
+          sheetImageUrl: undefined // 나중에 생성
+        } : undefined,
+        locationSheet: res.location ? {
+          name: res.location.name,
+          description: res.location.description,
+          lighting: res.location.lighting,
+          atmosphere: res.location.atmosphere,
+          timeOfDay: res.location.timeOfDay || 'day',
+          sheetImageUrl: undefined // 나중에 생성
+        } : undefined
       });
       markStepComplete('blueprint');
     } catch (e) {
@@ -124,6 +142,79 @@ export const BlueprintStep: React.FC = () => {
             다시 생성
           </button>
         </div>
+
+        {/* Character & Location Sheets */}
+        {(project.mainCharacterSheet || project.locationSheet) && (
+          <div className="px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white">
+            <div className="grid grid-cols-2 gap-4">
+              {/* Character Sheet */}
+              <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+                <div className="px-3 py-2 bg-blue-50 border-b border-blue-100">
+                  <div className="flex items-center gap-2">
+                    <svg className="w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    <span className="text-xs font-medium text-blue-700">캐릭터 시트</span>
+                  </div>
+                </div>
+                <div className="p-3">
+                  {project.mainCharacterSheet?.sheetImageUrl ? (
+                    <img
+                      src={project.mainCharacterSheet.sheetImageUrl}
+                      alt="Character Sheet"
+                      className="w-full h-24 object-cover rounded mb-2"
+                    />
+                  ) : (
+                    <div className="w-full h-24 bg-slate-100 rounded flex items-center justify-center mb-2">
+                      <span className="text-xs text-slate-400">이미지 생성 대기</span>
+                    </div>
+                  )}
+                  {project.mainCharacterSheet && (
+                    <div className="space-y-1">
+                      <p className="text-xs font-medium text-slate-700">{project.mainCharacterSheet.name || '이름 없음'}</p>
+                      <p className="text-[10px] text-slate-500 line-clamp-2">{project.mainCharacterSheet.appearance}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Location Sheet */}
+              <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+                <div className="px-3 py-2 bg-emerald-50 border-b border-emerald-100">
+                  <div className="flex items-center gap-2">
+                    <svg className="w-4 h-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span className="text-xs font-medium text-emerald-700">장소 시트</span>
+                  </div>
+                </div>
+                <div className="p-3">
+                  {project.locationSheet?.sheetImageUrl ? (
+                    <img
+                      src={project.locationSheet.sheetImageUrl}
+                      alt="Location Sheet"
+                      className="w-full h-24 object-cover rounded mb-2"
+                    />
+                  ) : (
+                    <div className="w-full h-24 bg-slate-100 rounded flex items-center justify-center mb-2">
+                      <span className="text-xs text-slate-400">이미지 생성 대기</span>
+                    </div>
+                  )}
+                  {project.locationSheet && (
+                    <div className="space-y-1">
+                      <p className="text-xs font-medium text-slate-700">{project.locationSheet.name || '장소 없음'}</p>
+                      <p className="text-[10px] text-slate-500 line-clamp-2">{project.locationSheet.description}</p>
+                      {project.locationSheet.lighting && (
+                        <p className="text-[10px] text-slate-400">🔆 {project.locationSheet.lighting}</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* 4x2 Grid */}
         <div className="flex-1 p-6 overflow-auto">

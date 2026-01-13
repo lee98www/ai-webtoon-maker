@@ -44,7 +44,7 @@ export function useSequentialGeneration(options: UseSequentialGenerationOptions 
       updatePanel(panel.id, { isGenerating: true });
 
       try {
-        // Prepare character references
+        // Prepare character references (legacy)
         const characterRefs = project.characters
           .filter((c) => c.referenceImages.length > 0)
           .map((c) => ({
@@ -55,6 +55,12 @@ export function useSequentialGeneration(options: UseSequentialGenerationOptions 
 
         // Prepare style reference
         const styleRef = project.styleRef?.images[0] || null;
+
+        // 캐릭터 시트 이미지 (base64)
+        const characterSheet = project.mainCharacterSheet?.sheetImageUrl || undefined;
+
+        // 장소 시트 이미지 (base64)
+        const locationSheet = project.locationSheet?.sheetImageUrl || undefined;
 
         // Generate with direct Gemini API call
         const url = await generatePanelImage(
@@ -67,7 +73,12 @@ export function useSequentialGeneration(options: UseSequentialGenerationOptions 
             characterRefs,
             styleRef,
             previousPanelImage: previousImageUrl,
-            includeDialogue: false  // 말풍선은 프론트엔드 오버레이로 처리
+            includeDialogue: true,  // 말풍선 AI 렌더링 활성화
+            // 시트 참조 (일관성 강화)
+            characterSheet,
+            locationSheet,
+            characterInfo: project.mainCharacterSheet,
+            locationInfo: project.locationSheet
           }
         );
 

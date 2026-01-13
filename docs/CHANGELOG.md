@@ -6,6 +6,69 @@
 
 ---
 
+## [2026-01-13] 캐릭터/장소 시트 자동 생성 + 말풍선 렌더링 + 일관성 강화
+
+### 문제
+1. **말풍선 미표시**: 대사가 이미지 내 말풍선으로 렌더링되지 않음
+2. **기승전결 패턴**: 8컷이 여전히 스토리 진행 구조로 생성됨
+3. **일관성 부족**: 캐릭터/배경이 패널마다 달라짐
+
+### 추가
+
+**타입 확장 (`types.ts`)**:
+- `CharacterSheetInfo` - 캐릭터 시트 정보 (이름, 외형, 의상, 특징, 이미지)
+- `LocationSheetInfo` - 장소 시트 정보 (이름, 설명, 조명, 분위기, 시간대, 이미지)
+- `WebtoonProject`에 `mainCharacterSheet`, `locationSheet` 필드 추가
+
+**새 함수 (`services/geminiService.ts`)**:
+- `generateLocationSheet()` - 장소 레퍼런스 이미지 생성 (3개 앵글)
+- `GenerationOptions` 확장: `characterSheet`, `locationSheet`, `characterInfo`, `locationInfo`
+
+**UI 추가 (`BlueprintStep.tsx`)**:
+- 패널 그리드 위에 캐릭터/장소 시트 표시 섹션
+- 시트 이미지 + 텍스트 정보 표시
+
+### 변경
+
+**`generateStoryboard` 프롬프트 강화**:
+```
+[절대 금지]
+- 시간 경과 (기승전결, 스토리 진행)
+- 장면 전환
+- 새로운 캐릭터 등장
+- 배경 변경
+
+[필수]
+- 8컷 모두 같은 0.5초~3초 안의 순간
+- 같은 장소, 같은 조명, 같은 캐릭터
+- 앵글과 스케일만 변화
+```
+
+**`generateStoryboard` 응답 확장**:
+- `mainCharacter`: 캐릭터 상세 정보 JSON 출력
+- `location`: 장소 상세 정보 JSON 출력
+
+**`generatePanelImage` 수정**:
+- 캐릭터/장소 시트 이미지를 멀티모달 참조로 전달
+- 말풍선 AI 렌더링 프롬프트 추가:
+  ```
+  [SPEECH BUBBLE - RENDER IN IMAGE]
+  Text: "대사"
+  Style: Standard round speech bubble with tail pointing to speaker
+  ```
+
+**`useSequentialGeneration.ts` 수정**:
+- `includeDialogue: true` 활성화
+- 시트 참조 옵션 전달 (`characterSheet`, `locationSheet`, `characterInfo`, `locationInfo`)
+
+### 관련 파일
+- `types.ts`
+- `services/geminiService.ts`
+- `src/components/steps/storyboard/BlueprintStep.tsx`
+- `src/hooks/useSequentialGeneration.ts`
+
+---
+
 ## [2026-01-13] 웹툰 뷰어 접근성 개선 및 새 작품 시작 기능
 
 ### 추가

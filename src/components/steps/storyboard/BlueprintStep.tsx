@@ -364,11 +364,36 @@ export const BlueprintStep: React.FC = () => {
           <button
             onClick={handleGenerateStoryboard}
             disabled={isProcessing}
-            className="text-sm text-slate-600 hover:text-slate-900 transition-colors"
+            className={`
+              text-sm transition-colors flex items-center gap-2
+              ${isProcessing
+                ? 'text-blue-500 cursor-not-allowed'
+                : 'text-slate-600 hover:text-slate-900'
+              }
+            `}
           >
-            다시 생성
+            {isProcessing ? (
+              <>
+                <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                <span>{sheetGenerationStatus || '생성 중...'}</span>
+              </>
+            ) : (
+              <>
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                <span>다시 생성</span>
+              </>
+            )}
           </button>
         </div>
+
+        {/* 진행 상태 표시 (패널 있을 때) */}
+        {generationStep !== 'idle' && (
+          <div className="px-6 py-4 border-b border-slate-200">
+            <GenerationProgress />
+          </div>
+        )}
 
         {/* Character & Location Sheets */}
         {(project.mainCharacterSheet || project.locationSheet) && (

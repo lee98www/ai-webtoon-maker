@@ -18,11 +18,15 @@ export const BlueprintStep: React.FC = () => {
   const [selectedPanelIndex, setSelectedPanelIndex] = useState<number | null>(null);
 
   const [sheetGenerationStatus, setSheetGenerationStatus] = useState<string>('');
+  const [generationStep, setGenerationStep] = useState<'idle' | 'storyboard' | 'character' | 'location' | 'done'>('idle');
+  const [sheetErrors, setSheetErrors] = useState<string[]>([]);
 
   const handleGenerateStoryboard = async () => {
     if (!project.synopsis && !ideaInput) return;
     setProcessing(true);
     setSheetGenerationStatus('콘티 생성 중...');
+    setGenerationStep('storyboard');
+    setSheetErrors([]);
 
     try {
       // 1단계: 콘티 생성
@@ -54,46 +58,62 @@ export const BlueprintStep: React.FC = () => {
         locationSheet
       });
 
-      // 2단계: 캐릭터 시트 및 장소 시트 이미지 생성 (병렬)
-      setSheetGenerationStatus('캐릭터/장소 시트 이미지 생성 중...');
+      // 2단계: 캐릭터 시트 및 장소 시트 이미지 생성 (순차)
+      console.log('=== 시트 이미지 생성 시작 ===');
+      console.log('mainCharacterSheet:', mainCharacterSheet);
+      console.log('locationSheet:', locationSheet);
 
-      const sheetPromises: Promise<void>[] = [];
+      setGenerationStep('character');
+      setSheetGenerationStatus('캐릭터 시트 이미지 생성 중...');
 
-      // 캐릭터 시트 이미지 생성 - mainCharacterSheet가 설정되었으면 반드시 생성
+      const sheetResults: { character?: string; location?: string; errors: string[] } = { errors: [] };
+
+      // 캐릭터 시트 이미지 생성
       if (mainCharacterSheet) {
-        console.log('캐릭터 시트 생성 시작:', mainCharacterSheet);
         const charDescription = [
           mainCharacterSheet.appearance,
           mainCharacterSheet.clothing ? `Clothing: ${mainCharacterSheet.clothing}` : '',
           mainCharacterSheet.distinctiveFeatures ? `Features: ${mainCharacterSheet.distinctiveFeatures}` : ''
         ].filter(Boolean).join('. ');
 
-        sheetPromises.push(
-          generateCharacterSheet({
+        console.log('캐릭터 시트 생성 요청:', {
+          name: mainCharacterSheet.name,
+          description: charDescription || res.characterVisuals,
+          artStyle: project.artStyle,
+          genre: project.genre
+        });
+
+        try {
+          setGenerationStep('character');
+          setSheetGenerationStatus('캐릭터 시트 이미지 생성 중...');
+          const charResult = await generateCharacterSheet({
             name: mainCharacterSheet.name || 'Character',
             description: charDescription || res.characterVisuals || 'Main character',
             artStyle: project.artStyle,
             genre: project.genre
-          }).then((charResult) => {
-            console.log('캐릭터 시트 생성 완료:', charResult.imageUrl.substring(0, 50) + '...');
-            setProject((prev) => ({
-              ...prev,
-              mainCharacterSheet: {
-                ...mainCharacterSheet,
-                sheetImageUrl: charResult.imageUrl
-              }
-            }));
-          }).catch((err) => {
-            console.error('캐릭터 시트 생성 실패:', err);
-          })
-        );
+          });
+          console.log('캐릭터 시트 생성 성공!');
+          sheetResults.character = charResult.imageUrl;
+        } catch (err) {
+          const errMsg = err instanceof Error ? err.message : '캐릭터 시트 생성 실패';
+          console.error('캐릭터 시트 생성 실패:', err);
+          sheetResults.errors.push(`캐릭터: ${errMsg}`);
+        }
       }
 
-      // 장소 시트 이미지 생성 - locationSheet가 설정되었으면 반드시 생성
+      // 장소 시트 이미지 생성
       if (locationSheet) {
-        console.log('장소 시트 생성 시작:', locationSheet);
-        sheetPromises.push(
-          generateLocationSheet({
+        console.log('장소 시트 생성 요청:', {
+          name: locationSheet.name,
+          description: locationSheet.description,
+          artStyle: project.artStyle,
+          genre: project.genre
+        });
+
+        try {
+          setGenerationStep('location');
+          setSheetGenerationStatus('장소 시트 이미지 생성 중...');
+          const locResult = await generateLocationSheet({
             name: locationSheet.name || 'Location',
             description: locationSheet.description || 'Scene location',
             lighting: locationSheet.lighting || 'natural',
@@ -101,44 +121,170 @@ export const BlueprintStep: React.FC = () => {
             timeOfDay: locationSheet.timeOfDay || 'day',
             artStyle: project.artStyle,
             genre: project.genre
-          }).then((locResult) => {
-            console.log('장소 시트 생성 완료:', locResult.imageUrl.substring(0, 50) + '...');
-            setProject((prev) => ({
-              ...prev,
-              locationSheet: {
-                ...locationSheet,
-                sheetImageUrl: locResult.imageUrl
-              }
-            }));
-          }).catch((err) => {
-            console.error('장소 시트 생성 실패:', err);
-          })
-        );
+          });
+          console.log('장소 시트 생성 성공!');
+          sheetResults.location = locResult.imageUrl;
+        } catch (err) {
+          const errMsg = err instanceof Error ? err.message : '장소 시트 생성 실패';
+          console.error('장소 시트 생성 실패:', err);
+          sheetResults.errors.push(`장소: ${errMsg}`);
+        }
       }
 
-      // 시트 생성 완료 대기 (실패해도 계속 진행)
-      if (sheetPromises.length > 0) {
-        console.log(`${sheetPromises.length}개의 시트 이미지 생성 대기 중...`);
-        await Promise.allSettled(sheetPromises);
-        console.log('시트 이미지 생성 완료');
+      // 시트 이미지 저장
+      if (sheetResults.character || sheetResults.location) {
+        setProject((prev) => ({
+          ...prev,
+          mainCharacterSheet: sheetResults.character && mainCharacterSheet ? {
+            ...mainCharacterSheet,
+            sheetImageUrl: sheetResults.character
+          } : prev.mainCharacterSheet,
+          locationSheet: sheetResults.location && locationSheet ? {
+            ...locationSheet,
+            sheetImageUrl: sheetResults.location
+          } : prev.locationSheet
+        }));
       }
 
-      setSheetGenerationStatus('');
+      // 에러가 있으면 경고 표시 (하지만 계속 진행)
+      if (sheetResults.errors.length > 0) {
+        console.warn('시트 생성 중 일부 실패:', sheetResults.errors);
+        setSheetErrors(sheetResults.errors);
+        setError({ message: `시트 생성 일부 실패: ${sheetResults.errors.join(', ')}`, type: 'warning' });
+      }
+
+      console.log('=== 시트 이미지 생성 완료 ===');
+
+      setGenerationStep('done');
+      setSheetGenerationStatus('완료!');
+      setTimeout(() => {
+        setSheetGenerationStatus('');
+        setGenerationStep('idle');
+      }, 2000);
       markStepComplete('blueprint');
     } catch (e) {
       const message = e instanceof Error ? e.message : '콘티 생성 실패';
       setError({ message, type: 'error' });
       setSheetGenerationStatus('');
+      setGenerationStep('idle');
     } finally {
       setProcessing(false);
     }
   };
 
+  // 프로그레스 바 컴포넌트
+  const GenerationProgress = () => {
+    if (generationStep === 'idle') return null;
+
+    const steps = [
+      { id: 'storyboard', label: '콘티 생성', icon: '📋' },
+      { id: 'character', label: '캐릭터 시트', icon: '👤' },
+      { id: 'location', label: '장소 시트', icon: '🏠' },
+    ];
+
+    const currentIndex = steps.findIndex(s => s.id === generationStep);
+
+    return (
+      <div className="bg-white border border-slate-200 rounded-xl p-6 mb-6 shadow-sm">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-semibold text-slate-900">생성 진행 상황</h3>
+          {generationStep === 'done' && (
+            <span className="text-sm text-emerald-600 font-medium flex items-center gap-1">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              완료
+            </span>
+          )}
+        </div>
+
+        {/* 단계별 프로그레스 */}
+        <div className="flex items-center gap-2">
+          {steps.map((step, index) => {
+            const isCompleted = currentIndex > index || generationStep === 'done';
+            const isCurrent = step.id === generationStep;
+            const hasError = sheetErrors.some(e =>
+              (step.id === 'character' && e.includes('캐릭터')) ||
+              (step.id === 'location' && e.includes('장소'))
+            );
+
+            return (
+              <React.Fragment key={step.id}>
+                <div className={`
+                  flex-1 flex items-center gap-2 px-3 py-2 rounded-lg transition-all
+                  ${isCompleted && !hasError ? 'bg-emerald-50 border border-emerald-200' : ''}
+                  ${isCurrent && !hasError ? 'bg-blue-50 border border-blue-200' : ''}
+                  ${hasError ? 'bg-red-50 border border-red-200' : ''}
+                  ${!isCompleted && !isCurrent && !hasError ? 'bg-slate-50 border border-slate-200' : ''}
+                `}>
+                  <span className="text-lg">{step.icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-xs font-medium truncate ${
+                      isCompleted && !hasError ? 'text-emerald-700' :
+                      isCurrent ? 'text-blue-700' :
+                      hasError ? 'text-red-700' :
+                      'text-slate-500'
+                    }`}>
+                      {step.label}
+                    </p>
+                    {isCurrent && (
+                      <div className="flex items-center gap-1 mt-0.5">
+                        <div className="w-3 h-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                        <span className="text-[10px] text-blue-500">생성 중...</span>
+                      </div>
+                    )}
+                    {isCompleted && !hasError && (
+                      <span className="text-[10px] text-emerald-500">✓ 완료</span>
+                    )}
+                    {hasError && (
+                      <span className="text-[10px] text-red-500">✕ 실패</span>
+                    )}
+                  </div>
+                </div>
+                {index < steps.length - 1 && (
+                  <svg className={`w-4 h-4 flex-shrink-0 ${
+                    currentIndex > index ? 'text-emerald-400' : 'text-slate-300'
+                  }`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                )}
+              </React.Fragment>
+            );
+          })}
+        </div>
+
+        {/* 에러 메시지 */}
+        {sheetErrors.length > 0 && (
+          <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-xs font-medium text-red-700 mb-1">일부 생성 실패:</p>
+            <ul className="text-xs text-red-600 list-disc list-inside">
+              {sheetErrors.map((err, i) => (
+                <li key={i}>{err}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* 현재 상태 텍스트 */}
+        {sheetGenerationStatus && generationStep !== 'done' && (
+          <p className="mt-3 text-sm text-slate-600 text-center">{sheetGenerationStatus}</p>
+        )}
+      </div>
+    );
+  };
+
   // No panels yet - show generate view
   if (project.panels.length === 0) {
     return (
-      <div className="h-full flex items-center justify-center bg-white">
-        <div className="text-center max-w-lg px-8">
+      <div className="h-full flex flex-col items-center justify-center bg-white px-8">
+        {/* 진행 상태 표시 */}
+        {generationStep !== 'idle' && (
+          <div className="w-full max-w-xl mb-6">
+            <GenerationProgress />
+          </div>
+        )}
+
+        <div className="text-center max-w-lg">
           {/* Icon */}
           <div className="w-20 h-20 bg-slate-100 rounded-2xl mx-auto mb-6 flex items-center justify-center">
             <svg className="w-10 h-10 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">

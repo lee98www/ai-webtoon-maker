@@ -411,7 +411,10 @@ Time: ${locationInfo.timeOfDay}`;
   let dialogueSection = '';
   let speechBubbleRule = '- DO NOT render any text or speech bubbles';
 
+  console.log(`[Panel ${panelIndex + 1}] dialogue:`, panel.dialogue);
+
   if (panel.dialogue && panel.dialogue.trim()) {
+    console.log(`[Panel ${panelIndex + 1}] 말풍선 포함됨:`, panel.dialogue);
     dialogueSection = `
 
 [SPEECH BUBBLE - MANDATORY]

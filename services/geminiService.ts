@@ -137,15 +137,33 @@ const IMAGE_MODEL = 'gemini-3-pro-image-preview';
 export const refineSynopsis = async (input: string, genre: Genre): Promise<string> => {
   const ai = getAiClient();
 
-  const systemPrompt = `당신은 네이버/카카오 웹툰 유료 결제율 1위의 메인 PD입니다.
-사용자의 아이디어를 상업적 베스트셀러의 '로그라인'과 '기승전결'로 재구성하십시오.
-독자의 도파민을 자극하는 '사이다'와 '반전' 요소를 반드시 포함하고, 상업적인 어휘를 사용하십시오.
-출력은 한국어로만, 300자 이내로 간결하게 작성하십시오.`;
+  const systemPrompt = `당신은 네이버/카카오 웹툰 연출 PD입니다.
+
+[핵심 원칙]
+사용자 아이디어에서 가장 임팩트 있는 **단일 순간**을 찾아라.
+전체 스토리가 아닌, 8컷으로 표현할 **결정적 장면** 하나를 선택하라.
+
+[장르별 하이라이트 순간 예시]
+- Action: 펀치가 얼굴에 닿는 0.5초, 칼날이 스치는 순간, 폭발 직전~직후
+- Romance: 고백 직전 떨리는 입술, 눈이 마주치는 순간, 손이 닿는 찰나
+- Horror: 뒤에 뭔가 있다는 걸 깨닫는 순간, 문이 열리는 3초, 눈을 마주치는 공포
+- Fantasy: 마법 발동의 순간, 용이 나타나는 임팩트, 각성의 순간
+- Noir: 총구가 겨눠지는 순간, 배신을 깨닫는 표정, 비 오는 거리의 대면
+- Slice of Life: 눈물이 흐르는 순간, 웃음이 터지는 찰나, 깨달음의 순간
+
+[출력 형식]
+1줄: 선택한 하이라이트 순간 (예: "복수를 결심하며 검을 쥐는 그 순간")
+2줄: 그 순간의 감정/긴장감
+3줄: 핵심 시각적 요소 (표정, 동작, 빛, 공간)
+
+한국어, 150자 이내.`;
 
   const prompt = `${systemPrompt}
 
-[장르: ${genre}] 아이디어: "${input}"
-작품의 상업적 가치를 극대화한 시놉시스를 한국어로 작성해.`;
+[장르: ${genre}]
+아이디어: "${input}"
+
+위 아이디어에서 8컷으로 분해할 **가장 임팩트 있는 단일 순간**을 선택하고 묘사하라.`;
 
   const response = await ai.models.generateContent({
     model: TEXT_MODEL,
@@ -175,52 +193,55 @@ export const generateStoryboard = async (
 장르: ${genre}
 
 [핵심 원칙]
-8컷 = 한 순간의 하이라이트. 전체 이야기 금지.
+8컷 = 한 순간의 하이라이트 (0.5초~3초).
 소재에서 가장 임팩트 있는 **단일 순간**을 선택해 8컷으로 분해하라.
+전체 이야기 금지. 기승전결 금지. 캐릭터 소개 금지.
 
-[장르별 하이라이트 예시]
-- Action: 펀치가 얼굴에 닿는 0.5초 / 칼날이 스치는 순간 / 폭발 직전~직후
-- Romance: 고백 직전 떨리는 입술 / 눈이 마주치는 순간 / 손이 닿는 찰나
-- Horror: 뒤에 뭔가 있다는 걸 깨닫는 순간 / 문이 열리는 3초 / 눈을 마주치는 공포
-- Fantasy: 마법이 발동되는 순간 / 용이 나타나는 임팩트 / 각성의 순간
-- Noir: 총구가 겨눠지는 순간 / 배신을 깨닫는 표정 / 비 오는 거리의 대면
-- Slice of Life: 눈물이 흐르는 순간 / 웃음이 터지는 찰나 / 깨달음의 순간
+[완전한 창작 자유]
+8컷의 구성, 순서, 앵글, 샷 크기를 **자유롭게 창작**하라.
+고정 템플릿 없음. 이 순간에 가장 효과적인 시각적 전개를 창작하라.
 
-[8컷 분해법]
-1-2컷: 순간 직전의 긴장 (손끝, 눈동자, 공기의 정적)
-3-5컷: 핵심 순간을 3개 앵글로 분해 (와이드→클로즈업→익스트림 클로즈업 OR 반대)
-6-7컷: 순간 직후 반응 (표정, 여파, 충격)
-8컷: 강렬한 여운 또는 반전
+예시 (참고만, 따라하지 마):
+- "복수의 칼날" → 1컷부터 눈 익스트림 클로즈업, 3컷에서 갑자기 와이드
+- "첫 키스" → 느린 줌인, 손→입술→눈 순서
+- "폭발" → 와이드→클로즈→와이드 빠른 전환
+
+[연출 원칙]
+- 리듬 변화: 빠른/느린 전환의 대비
+- 스케일 변화: 와이드↔클로즈업 전환으로 긴장감 조절
+- 시선 유도: 독자의 눈이 자연스럽게 흐르도록
+- 연속 3컷 동일 앵글/샷 크기 금지
+- 매 생성마다 다른 구성을 시도하라
 
 [시각적 디테일 - 반드시 포함]
-각 컷의 description에 구체적 디테일을 넣어라:
-- 땀방울, 떨리는 손, 확대되는 눈동자
-- 흩날리는 머리카락, 옷자락의 펄럭임
-- 빛과 그림자, 역광, 실루엣
-- 속도선, 집중선, 임팩트 이펙트
+- 마이크로: 땀방울, 떨리는 손끝, 확대되는 눈동자, 입술의 떨림
+- 환경: 흩날리는 머리카락, 옷자락, 먼지, 파편
+- 빛과 그림자: 역광, 실루엣, 하이라이트, 렌즈 플레어
+- 속도감: 모션 블러, 집중선, 임팩트 이펙트
 
-[샷 크기] extreme_wide / wide / full / medium / medium_close / close_up / extreme_close_up
-[앵글] eye_level / low_angle / high_angle / dutch_angle / over_shoulder / pov / birds_eye / worms_eye
+[옵션]
+샷: extreme_wide / wide / full / medium / medium_close / close_up / extreme_close_up
+앵글: eye_level / low_angle / high_angle / dutch_angle / over_shoulder / pov / birds_eye / worms_eye
 
 [JSON 출력]
 {
   "title": "제목",
-  "characterVisuals": "캐릭터 외형 (영어, 얼굴/머리/체형/의상)",
-  "highlightMoment": "선택한 하이라이트 순간 설명 (한국어, 1줄)",
+  "characterVisuals": "캐릭터 외형 (영어)",
+  "highlightMoment": "선택한 하이라이트 순간 (한국어, 1줄)",
   "panels": [
     {
       "panelNumber": 1,
       "timeOffset": "0.0s",
-      "description": "영어 시각 묘사 (디테일 필수: 땀, 떨림, 빛, 그림자 등)",
+      "description": "영어 시각 묘사 (디테일 필수)",
       "descriptionKo": "한국어 연출 노트",
-      "shotSize": "close_up",
-      "cameraAngle": "low_angle",
-      "visualDetails": ["trembling fingers", "sweat on forehead", "harsh shadows"],
+      "shotSize": "자유 선택",
+      "cameraAngle": "자유 선택",
+      "visualDetails": ["디테일1", "디테일2", "디테일3"],
       "dialogue": "",
       "caption": "",
-      "characterFocus": "주인공",
-      "composition": "삼분법 우측, 여백 좌측",
-      "directorNote": "긴장감 극대화를 위한 손 클로즈업"
+      "characterFocus": "피사체",
+      "composition": "구도 설명",
+      "directorNote": "이 컷의 연출 의도"
     }
   ]
 }

@@ -11,31 +11,30 @@ App.tsx
 │
 └── [일반 모드] → WizardLayout
     │
-    ├── Navigation (상단 네비게이션)
+    ├── Header (미니멀 헤더)
     │   └── ApiKeyModal (설정 시)
     │
-    ├── StepIndicator (단계 표시)
+    ├── StepIndicator (가로 스텝 표시)
     │
-    ├── ContentArea (현재 단계 콘텐츠)
+    ├── main (스텝별 전체화면 콘텐츠)
     │   │
     │   ├── [CONCEPT] → UnifiedConceptEditor
-    │   │   ├── StoryPanel (좌측 70%)
-    │   │   │   └── 아이디어 입력, 시놉시스 생성
-    │   │   └── SidePanel (우측 30%)
-    │   │       ├── GenreSelector
-    │   │       ├── StyleSelector
-    │   │       ├── CharacterManager
-    │   │       └── StyleReference
+    │   │   ├── StoryPanel (좌측 - 아이디어 입력)
+    │   │   │   └── textarea (h-48 고정 높이)
+    │   │   └── SettingsPanel (우측 400px)
+    │   │       ├── 장르 선택 (2x3 그리드)
+    │   │       ├── 스타일 선택 (2x3 그리드)
+    │   │       └── 고급 옵션 (캐릭터/스타일 레퍼런스)
     │   │
     │   ├── [STORYBOARD] → BlueprintStep
-    │   │   ├── 스토리보드 생성 버튼
-    │   │   └── 패널 목록 (편집 가능)
+    │   │   ├── PanelGrid (좌측 - 4x2 그리드)
+    │   │   └── PanelEditor (우측 400px)
     │   │
     │   └── [PRODUCTION] → RenderStep
-    │       ├── 웹툰 미리보기 (좌측)
-    │       └── 제어 패널 (우측)
+    │       ├── WebtoonPreview (좌측 - 세로 스크롤)
+    │       └── ControlPanel (우측 340px)
     │
-    ├── StepFooter (하단 네비게이션)
+    ├── StepFooter (이전/다음 + 진행 표시)
     │
     └── [Global]
         ├── ProgressBar
@@ -50,48 +49,67 @@ App.tsx
 
 **위치**: `src/components/wizard/WizardLayout.tsx`
 
-전체 마법사 레이아웃을 구성하는 최상위 컴포넌트.
+전체 마법사 레이아웃을 구성하는 최상위 컴포넌트. Full-Screen Step Flow 패턴.
 
 ```tsx
-<WizardLayout>
-  <Header />
-  <StepIndicator />
-  <ContentArea />
-  <StepFooter />
-</WizardLayout>
+// 새로운 구조 (2026-01-13 재설계)
+<div className="h-screen w-screen flex flex-col bg-slate-50">
+  <Header />           {/* h-14 고정 */}
+  <StepIndicator />    {/* h-20 고정 */}
+  <main className="flex-1 min-h-0 overflow-auto">
+    {StepComponent}    {/* 스텝별 전용 레이아웃 */}
+  </main>
+  <StepFooter />       {/* h-16 고정 */}
+</div>
 ```
 
-### Navigation
+**핵심 CSS 패턴**:
+- `h-screen flex flex-col` - 전체 화면 세로 배치
+- `flex-1 min-h-0` - 남은 공간 채우기 + 스크롤 가능
 
-**위치**: `src/components/layout/Navigation.tsx`
+### Header
 
-상단 네비게이션 바.
+**위치**: `src/components/layout/Header.tsx`
 
-**기능**:
-- 로고 표시
-- API Key 변경 버튼
-- Load/Save Project 버튼
-- 단계 네비게이션 (01, 02, 03)
+미니멀 헤더. 로고와 API 설정 버튼만 표시.
 
-**상태**:
-- `showApiKeyModal: boolean` - API 키 모달 표시 여부
+```tsx
+<header className="h-14 border-b border-slate-200 bg-white">
+  <Logo />              {/* ToonCraft AI Studio */}
+  <ApiButton />         {/* API 키 변경 */}
+</header>
+```
+
+### StepIndicator
+
+**위치**: `src/components/layout/StepIndicator.tsx`
+
+가로 스텝 네비게이션. 3단계 표시.
+
+**구조**:
+```
+[1] ──── [2] ──── [3]
+기획     콘티     제작
+```
+
+**색상 체계**:
+- 완료: `bg-emerald-500`
+- 현재: `bg-slate-900`
+- 미완료: `bg-slate-200`
 
 ### StepFooter
 
 **위치**: `src/components/layout/StepFooter.tsx`
 
-하단 네비게이션 버튼.
+하단 네비게이션. 이전/다음 버튼 + 진행 표시 (dot).
 
-**Props**:
+**구조**:
 ```tsx
-interface StepFooterProps {
-  onPrevious?: () => void;
-  onNext?: () => void;
-  onSkip?: () => void;
-  canGoNext?: boolean;
-  canGoPrevious?: boolean;
-  showSkip?: boolean;
-}
+<footer className="h-16 border-t border-slate-200 bg-white">
+  <PreviousButton />
+  <ProgressDots />     {/* emerald-500 완료, slate-900 현재 */}
+  <NextButton />
+</footer>
 ```
 
 ---
@@ -102,69 +120,106 @@ interface StepFooterProps {
 
 **위치**: `src/components/concept/UnifiedConceptEditor.tsx`
 
-기획 단계의 통합 에디터. 좌우 분할 레이아웃.
+기획 단계의 통합 에디터. 2컬럼 그리드 레이아웃.
 
-**구조**:
+**구조** (2026-01-13 재설계):
 ```
-┌─────────────────────┬───────────────┐
-│                     │ GenreSelector │
-│   StoryPanel        ├───────────────┤
-│   (아이디어 입력)    │ StyleSelector │
-│                     ├───────────────┤
-│   [AI 시놉시스 생성] │ CharacterMgr  │
-│                     ├───────────────┤
-│                     │ StyleRef      │
-└─────────────────────┴───────────────┘
+┌─────────────────────────────┬────────────────────┐
+│                             │ 설정 헤더           │
+│  StoryPanel                 ├────────────────────┤
+│  - textarea (h-48 고정)      │ 장르 선택 (2x3)    │
+│  - 글자수 표시               ├────────────────────┤
+│  - AI 시놉시스 정제 버튼      │ 스타일 선택 (2x3)  │
+│                             ├────────────────────┤
+│  (생성된 시놉시스 표시)       │ 고급 옵션          │
+│                             │ - 캐릭터 설정 →    │
+│                             │ - 스타일 레퍼런스 → │
+│                             ├────────────────────┤
+│                             │ 설정 요약          │
+└─────────────────────────────┴────────────────────┘
+```
+
+**핵심 CSS**:
+```tsx
+<div className="h-full min-h-0 flex flex-col">
+  <div className="flex-1 min-h-0 grid grid-cols-[1fr_400px]">
+    <div className="min-h-0 overflow-auto">
+      <StoryPanel />
+    </div>
+    <div className="min-h-0 overflow-auto border-l">
+      <SettingsPanel />
+    </div>
+  </div>
+</div>
 ```
 
 **하위 컴포넌트**:
 
 | 컴포넌트 | 역할 |
 |---------|------|
-| `IdeaInput` | 텍스트 입력 영역 |
-| `GenreSelector` | 7개 장르 카드 선택 |
-| `StyleSelector` | 6개 스타일 카드 선택 |
-| `CharacterManager` | 캐릭터 레퍼런스 관리 |
-| `StyleReference` | 스타일 레퍼런스 설정 |
+| `StoryPanel` | 스토리 입력 (textarea h-48) |
+| `SettingsPanel` | 장르/스타일/고급 옵션 |
+| `CharacterModal` | 캐릭터 설정 모달 |
+| `StyleRefModal` | 스타일 레퍼런스 모달 |
 
 ### BlueprintStep (콘티 단계)
 
 **위치**: `src/components/steps/storyboard/BlueprintStep.tsx`
 
-8컷 스토리보드 생성 및 편집.
+8컷 스토리보드 생성 및 편집. 4x2 그리드 + 우측 편집 패널.
 
-**기능**:
-- "스토리보드 생성하기" 버튼
-- 패널 목록 표시 (확장/축소)
-- 각 패널 편집 (description, dialogue, caption)
+**구조** (2026-01-13 재설계):
+```
+┌────────────────────────────────────┬─────────────────┐
+│ 패널 구성 헤더        [다시 생성]   │ 패널 N          │
+├────────────────────────────────────┤ ┌─────────────┐ │
+│ ┌─────┬─────┬─────┬─────┐         │ │ 비주얼 설명  │ │
+│ │  1  │  2  │  3  │  4  │         │ ├─────────────┤ │
+│ ├─────┼─────┼─────┼─────┤         │ │ 샷 크기     │ │
+│ │  5  │  6  │  7  │  8  │         │ ├─────────────┤ │
+│ └─────┴─────┴─────┴─────┘         │ │ 카메라 앵글  │ │
+│                                    │ ├─────────────┤ │
+│  (4x2 그리드 - 클릭하여 선택)       │ │ 대사        │ │
+│                                    │ │ 나레이션    │ │
+│                                    │ └─────────────┘ │
+│                                    │ [이전] N/8 [다음] │
+└────────────────────────────────────┴─────────────────┘
+```
 
 **상태** (from store):
 - `project.panels: PanelConfig[]`
-- `expandedPanels: Set<number>`
+- `selectedPanelIndex: number | null` (로컬)
 
 ### RenderStep (제작 단계)
 
 **위치**: `src/components/steps/production/RenderStep.tsx`
 
-이미지 렌더링 및 다운로드.
+이미지 렌더링 및 다운로드. 세로 웹툰 프리뷰 + 우측 컨트롤.
 
-**구조**:
+**구조** (2026-01-13 재설계):
 ```
-┌─────────────────┬──────────────┐
-│                 │              │
-│  웹툰 미리보기   │  제어 패널    │
-│  (세로 스크롤)   │              │
-│                 │  [생성 시작]  │
-│  - 패널 1       │  진행률: 3/8  │
-│  - 패널 2       │  예상: 2분    │
-│  - ...          │              │
-│                 │  [재시도]     │
-│                 │              │
-└─────────────────┴──────────────┘
+┌─────────────────────────────┬──────────────────┐
+│ 웹툰 미리보기     완료: 3/8  │ 렌더링 설정 헤더  │
+├─────────────────────────────┤──────────────────┤
+│  ┌─────────────────────┐    │ 생성 모드        │
+│  │ 제목 카드           │    │ [순차] [병렬]    │
+│  └─────────────────────┘    ├──────────────────┤
+│  ┌─────────────────────┐    │ 진행 상황        │
+│  │ 패널 1 (3:4 비율)   │    │ ████░░░░ 37%    │
+│  └─────────────────────┘    │ 3/8 패널         │
+│  ┌─────────────────────┐    ├──────────────────┤
+│  │ 패널 2 (생성 중...)  │    │ [모든 패널 렌더링]│
+│  └─────────────────────┘    ├──────────────────┤
+│  ...                        │ 팁              │
+│  ┌─────────────────────┐    │ • 순차 모드...   │
+│  │ To be continued...  │    │                  │
+│  └─────────────────────┘    ├──────────────────┤
+│                             │ [웹툰 내보내기]   │
+└─────────────────────────────┴──────────────────┘
 ```
 
 **훅 사용**:
-- `useSequentialGeneration()` - 순차 이미지 생성
+- `useSequentialGeneration()` - 순차/병렬 이미지 생성
 
 ---
 

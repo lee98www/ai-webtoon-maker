@@ -6,6 +6,34 @@
 
 ---
 
+## [2026-01-13] 웹툰 뷰어 접근성 개선 및 새 작품 시작 기능
+
+### 추가
+- `src/components/ui/ConfirmModal.tsx` - 재사용 가능한 확인 모달 컴포넌트
+  - 3가지 색상 테마 (danger, warning, info)
+  - 앱 디자인에 맞는 커스텀 스타일
+
+### 변경
+- `src/components/steps/production/RenderStep.tsx`
+  - "웹툰 내보내기" 버튼에 onClick 핸들러 연결
+  - 클릭 시 WebtoonViewer로 이동 (AppStep.VIEWER)
+  - 뷰어에서 ZIP/합본 이미지 다운로드 안내 텍스트 추가
+
+- `src/components/layout/Header.tsx`
+  - 로고 클릭 시 새 작품 시작 기능 추가
+  - 작업 내용이 있으면 확인 모달 표시
+  - 확인 시 resetProject() 호출하여 초기화
+
+### 수정
+- 다운로드 버튼이 작동하지 않던 문제 해결 (WebtoonViewer로 연결)
+
+### 관련 파일
+- `src/components/ui/ConfirmModal.tsx` (신규)
+- `src/components/steps/production/RenderStep.tsx`
+- `src/components/layout/Header.tsx`
+
+---
+
 ## [2026-01-13] 프롬프트 파이프라인 완전 재설계 - "한 순간 + 창작 자유"
 
 ### 문제

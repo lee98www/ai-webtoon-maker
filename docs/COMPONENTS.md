@@ -75,10 +75,14 @@ App.tsx
 
 ```tsx
 <header className="h-14 border-b border-slate-200 bg-white">
-  <Logo />              {/* ToonCraft AI Studio */}
+  <Logo />              {/* ToonCraft AI Studio - 클릭 시 새 작품 시작 */}
   <ApiButton />         {/* API 키 변경 */}
 </header>
 ```
+
+**기능**:
+- 로고 클릭 시 새 작품 시작 (작업 내용 있으면 확인 모달 표시)
+- API 키 설정 모달 열기
 
 ### StepIndicator
 
@@ -271,6 +275,30 @@ const { error, clearError } = useProjectStore();
 const { progress } = useProjectStore();
 // progress: { current: number, total: number, message: string }
 ```
+
+### ConfirmModal
+
+**위치**: `src/components/ui/ConfirmModal.tsx`
+
+재사용 가능한 확인 모달 컴포넌트.
+
+**Props**:
+```tsx
+interface ConfirmModalProps {
+  title: string;
+  message: string;
+  confirmText?: string;    // 기본값: "확인"
+  cancelText?: string;     // 기본값: "취소"
+  onConfirm: () => void;
+  onCancel: () => void;
+  variant?: 'danger' | 'warning' | 'info';  // 기본값: "warning"
+}
+```
+
+**색상 테마**:
+- `danger`: 빨간색 (삭제 등 위험 작업)
+- `warning`: 주황색 (주의 필요)
+- `info`: 파란색 (정보성 확인)
 
 ### Button
 

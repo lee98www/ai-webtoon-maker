@@ -43,6 +43,33 @@ export interface StyleReference {
   extractedStyle?: string; // AI analyzed style description
 }
 
+// ============================================
+// 캐릭터 시트 정보 (Character Sheet)
+// 자동 생성되어 패널 생성 시 참조됨
+// ============================================
+
+export interface CharacterSheetInfo {
+  name: string;
+  appearance: string;      // 상세 외형: 얼굴형, 눈 색, 머리카락, 피부톤
+  clothing: string;        // 현재 씬의 의상 상세
+  distinctiveFeatures: string;  // 흉터, 악세서리, 특징
+  sheetImageUrl?: string;  // 생성된 캐릭터 시트 이미지 (base64)
+}
+
+// ============================================
+// 장소 시트 정보 (Location Sheet)
+// 자동 생성되어 패널 생성 시 참조됨
+// ============================================
+
+export interface LocationSheetInfo {
+  name: string;
+  description: string;     // 바닥, 벽, 조명, 가구, 소품 등
+  lighting: string;        // 조명 설명 (역광, 자연광 등)
+  atmosphere: string;      // 분위기 (긴장감, 평화로움 등)
+  timeOfDay: string;       // 시간대 (낮, 밤, 새벽 등)
+  sheetImageUrl?: string;  // 생성된 장소 시트 이미지 (base64)
+}
+
 // 8-Panel Story Beat Types
 export type BeatType =
   | 'hook'           // 1컷: 시선을 사로잡는 오프닝
@@ -186,6 +213,9 @@ export interface WebtoonProject {
   // New fields for reference system
   characters: CharacterReference[];
   styleRef: StyleReference | null;
+  // 자동 생성 시트 (콘티 생성 시 자동 추출)
+  mainCharacterSheet?: CharacterSheetInfo;
+  locationSheet?: LocationSheetInfo;
 }
 
 // Project Export format

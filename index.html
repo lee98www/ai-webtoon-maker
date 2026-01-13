@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ToonCraft Studio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Nanum+Myeongjo:wght@400;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              // Primary - Ink Black & White
+              ink: {
+                50: '#fafafa',
+                100: '#f4f4f5',
+                200: '#e4e4e7',
+                300: '#d4d4d8',
+                400: '#a1a1aa',
+                500: '#71717a',
+                600: '#52525b',
+                700: '#3f3f46',
+                800: '#27272a',
+                900: '#18181b',
+                950: '#09090b',
+              },
+              // Accent - Deep Blue (Toon accent)
+              toon: {
+                50: '#eff6ff',
+                100: '#dbeafe',
+                200: '#bfdbfe',
+                300: '#93c5fd',
+                400: '#60a5fa',
+                500: '#3b82f6',
+                600: '#2563eb',
+                700: '#1d4ed8',
+                800: '#1e40af',
+                900: '#1e3a8a',
+              },
+              // Warm - Brown/Sepia (vintage feel)
+              warm: {
+                50: '#faf8f5',
+                100: '#f5f0e8',
+                200: '#e8dfd2',
+                300: '#d4c4ad',
+                400: '#bfa686',
+                500: '#a68a64',
+                600: '#8b7355',
+                700: '#6f5c46',
+                800: '#5a4a3a',
+                900: '#4a3d30',
+              },
+            },
+            fontFamily: {
+              sans: ['Noto Sans KR', 'sans-serif'],
+              serif: ['Nanum Myeongjo', 'serif'],
+              mono: ['IBM Plex Mono', 'monospace'],
+            },
+          },
+        },
+      }
+    </script>
+    <style>
+      :root {
+        --font-sans: 'Noto Sans KR', sans-serif;
+        --font-serif: 'Nanum Myeongjo', serif;
+        --font-mono: 'IBM Plex Mono', monospace;
+      }
+
+      body {
+        font-family: var(--font-sans);
+        background-color: #faf8f5;
+        color: #18181b;
+      }
+
+      /* Custom scrollbar - Toon style */
+      ::-webkit-scrollbar {
+        width: 10px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #f5f0e8;
+        border-left: 2px solid #e8dfd2;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #d4c4ad;
+        border: 2px solid #f5f0e8;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #bfa686;
+      }
+
+      .font-serif { font-family: var(--font-serif); }
+      .font-mono { font-family: var(--font-mono); }
+
+      /* Animations */
+      .animate-fade-in {
+        animation: fadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+
+      .animate-slide-up {
+        animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+
+      .animate-pulse-slow {
+        animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+      }
+
+      .animate-bounce-subtle {
+        animation: bounceSub 2s ease-in-out infinite;
+      }
+
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(8px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      @keyframes slideUp {
+        from { opacity: 0; transform: translateY(16px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      @keyframes bounceSub {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-4px); }
+      }
+
+      /* Toon-style shadows */
+      .shadow-toon {
+        box-shadow: 4px 4px 0 0 #18181b;
+      }
+
+      .shadow-toon-sm {
+        box-shadow: 2px 2px 0 0 #18181b;
+      }
+
+      .shadow-toon-lg {
+        box-shadow: 6px 6px 0 0 #18181b;
+      }
+
+      .shadow-toon-blue {
+        box-shadow: 4px 4px 0 0 #2563eb;
+      }
+
+      /* Selection */
+      ::selection {
+        background-color: #2563eb;
+        color: #ffffff;
+      }
+
+      /* Focus styles */
+      .focus-toon:focus {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.3);
+      }
+
+      /* Panel card hover effect */
+      .panel-card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .panel-card:hover {
+        transform: translate(-2px, -2px);
+        box-shadow: 6px 6px 0 0 #18181b;
+      }
+
+      /* Button styles */
+      .btn-toon {
+        position: relative;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+      }
+
+      .btn-toon:hover:not(:disabled) {
+        transform: translate(-2px, -2px);
+        box-shadow: 4px 4px 0 0 #18181b;
+      }
+
+      .btn-toon:active:not(:disabled) {
+        transform: translate(1px, 1px);
+        box-shadow: 1px 1px 0 0 #18181b;
+      }
+
+      /* Dotted patterns */
+      .pattern-dots {
+        background-image: radial-gradient(#d4c4ad 1.5px, transparent 1.5px);
+        background-size: 20px 20px;
+      }
+
+      .pattern-grid {
+        background-image:
+          linear-gradient(to right, #e8dfd2 1px, transparent 1px),
+          linear-gradient(to bottom, #e8dfd2 1px, transparent 1px);
+        background-size: 24px 24px;
+      }
+
+      /* Speech bubble styles */
+      .speech-bubble {
+        position: relative;
+        background: white;
+        border: 3px solid #18181b;
+        border-radius: 16px;
+        padding: 14px 18px;
+      }
+
+      .speech-bubble::after {
+        content: '';
+        position: absolute;
+        bottom: -12px;
+        left: 24px;
+        width: 0;
+        height: 0;
+        border-left: 10px solid transparent;
+        border-right: 10px solid transparent;
+        border-top: 12px solid #18181b;
+      }
+
+      .speech-bubble::before {
+        content: '';
+        position: absolute;
+        bottom: -8px;
+        left: 26px;
+        width: 0;
+        height: 0;
+        border-left: 8px solid transparent;
+        border-right: 8px solid transparent;
+        border-top: 10px solid white;
+        z-index: 1;
+      }
+
+      /* Card hover lift */
+      .card-lift {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .card-lift:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 24px rgba(24, 24, 27, 0.12);
+      }
+
+      /* Input focus ring */
+      input:focus, textarea:focus, select:focus {
+        outline: none;
+      }
+
+      /* Loading spinner */
+      .spinner {
+        border: 3px solid #e4e4e7;
+        border-top-color: #2563eb;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+
+      /* Tooltip */
+      .tooltip {
+        position: relative;
+      }
+
+      .tooltip::after {
+        content: attr(data-tooltip);
+        position: absolute;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 6px 12px;
+        background: #18181b;
+        color: white;
+        font-size: 11px;
+        font-weight: 500;
+        white-space: nowrap;
+        border-radius: 4px;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s;
+      }
+
+      .tooltip:hover::after {
+        opacity: 1;
+      }
+
+      /* Gradient text */
+      .text-gradient {
+        background: linear-gradient(135deg, #2563eb, #3b82f6);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      /* Step transitions */
+      .step-enter {
+        animation: stepEnter 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+
+      .step-exit {
+        animation: stepExit 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+
+      @keyframes stepEnter {
+        from {
+          opacity: 0;
+          transform: translateX(24px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+
+      @keyframes stepExit {
+        from {
+          opacity: 1;
+          transform: translateX(0);
+        }
+        to {
+          opacity: 0;
+          transform: translateX(-24px);
+        }
+      }
+
+      /* Preview panel fade */
+      .preview-fade {
+        animation: previewFade 0.5s ease-out;
+      }
+
+      @keyframes previewFade {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+
+      /* Progress bar fill animation */
+      .progress-fill {
+        transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+
+      /* Line clamp utilities */
+      .line-clamp-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+
+      .line-clamp-3 {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+
+      .line-clamp-4 {
+        display: -webkit-box;
+        -webkit-line-clamp: 4;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+    </style>
+    <script type="importmap">
+{
+  "imports": {
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "@google/genai": "https://esm.sh/@google/genai@^1.34.0",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body class="bg-warm-50 text-ink-900 antialiased">
+    <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>
